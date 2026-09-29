@@ -1,0 +1,12 @@
+Canonical Template Parameters:
+       pageid - a parameter that has the value of a mediawiki
+                link to the page that this template is
+                populated by
+  
+     sitename - the requested sitename
+
+         body - the body of the wiki request
+
+      private - 'Y' if the 'private' box was checked, 'N' otherwise
+   realperson - 'Y' if the 'real person' box was checked, 'N' otherwise
+         nsfw - 'Y' if the 'nsfw' box was checked, 'N' otherwise

@@ -1,0 +1,16 @@
+This topic covers the creation of practice wiki request
+  review templates (templates for short).
+
+Basic Structure:
+  All templates are found under the 'templates' directory.
+  A template is any subdirectory containing a 'template.txt'
+    file.
+  If the subdirectory also includes a 'params.json' file,
+    it will be used to define linked parameters.
+
+Subtopics:
+  syntax         - covers basic syntax
+  canon-params   - a list of canonical scraped parameters
+  linked-defs    - covers the files defining linked parameters
+  scraped-params - covers scraped parameters
+

@@ -1,0 +1,7 @@
+templ pick [template]:
+  change the active template, [template] must be in the list of templates
+    from `templ list`
+
+See Also:
+  use `help templ` for information about template related commands
+

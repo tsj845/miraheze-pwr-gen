@@ -2,3 +2,5 @@ Help Topics:
   topics
   commands
   templates
+  troubleshooting
+  bugs

@@ -1,0 +1,12 @@
+templ [action]:
+  list and change templates
+
+Actions:
+  list  - list indexed templates
+  index - reindex templates
+  pick  - choose a template
+
+See Also:
+  use `help templ [action]` for details about an action
+  use `help review` for information about using templates
+

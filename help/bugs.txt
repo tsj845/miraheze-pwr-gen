@@ -1,0 +1,5 @@
+Bugs should be reported either by creating an issue on the git
+  repository (https://github.com/tsj845/miraheze-pwr-gen), or
+  by pinging @person0192837465 in the Miraheze discord server.
+
+Feel free to fix bugs on your own initiative and create PRs.

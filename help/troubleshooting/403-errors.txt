@@ -1,0 +1,15 @@
+A 403 error is often caused by a cloudflare challenge.
+Due to this project not being even close to warranting a proper solution to this,
+  there is instead a workaround.
+
+1) Go to any meta.miraheze.org page and open your browser's development tools, then
+   go to the network tab and reload the page.
+2) Click on the first request, find the request headers, and copy the value of the
+   "cookie" header.
+3) Create a file named ".cookie" and paste the cookie header contents in this file.
+
+You do not need to restart the program.
+
+(If you aren't happy with this, you are more than welcome to submit a PR with a real
+  [read: NOT READING COOKIES AUTOMATICALLY] solution)
+

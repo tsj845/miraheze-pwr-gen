@@ -2,4 +2,6 @@ Commands List:
   quit
   help
   version
+  templ
+  review
   dbg

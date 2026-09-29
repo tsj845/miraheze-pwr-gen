@@ -1,0 +1,5 @@
+templ index:
+  reindex templates, if the current template was modified, use `templ pick` to update it
+
+See Also:
+  use `help templ` for information about template related commands
