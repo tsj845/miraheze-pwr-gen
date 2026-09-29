@@ -1,0 +1,3 @@
+That command doesn't have a help page.
+
+Use `help commands` for a list of commands.

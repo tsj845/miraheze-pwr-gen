@@ -1,0 +1,1 @@
+That help page doesn't seem to exist, use `help` to see a list of pages.

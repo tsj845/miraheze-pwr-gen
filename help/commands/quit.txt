@@ -1,0 +1,3 @@
+quit:
+  quits the utility
+

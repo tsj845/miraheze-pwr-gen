@@ -1,0 +1,5 @@
+Commands List:
+  quit
+  help
+  version
+  dbg

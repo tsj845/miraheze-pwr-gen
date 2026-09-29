@@ -1,0 +1,27 @@
+!! this is the template for the generated wikitext, begin lines with '!!' for comments
+!! leading and trailing newlines will be stripped
+!! use {param} for user-supplied template parameters
+!! use {=param} for canonical parameters (see code for list)
+!! use {=!param} for raw scraped parameters
+!! use {-param} for parameters from a linked "params.json" file
+
+
+!! page title
+=== [[{=pageid}|{=sitename}]] ===
+!! add timestamp
+~~~~~
+
+{=body}
+
+'''PRIVATE: {=private}'''<br>
+'''REAL PERSON: {=realperson}'''<br>
+'''NSFW: {=nsfw}'''<br>
+
+'''ACTION (disregarding comments): {-act_nocom}'''<br>
+{-reason_nocom}
+
+'''ACTION (including comments): {-act_com}'''<br>
+{-reason_com}
+
+==== FEEDBACK ====
+

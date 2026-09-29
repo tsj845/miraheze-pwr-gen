@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "params": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type":"string","description": "parameter name"},
+                    "default": {"type":"string","description": "default parameter value"},
+                    "ro-if-udf": {"type":"array","description": "a list of parameters that must be non-default for this to be writeable","items": {"type":"string"}},
+                    "nd-if-udf": {"type":"array","description": "a list of parameters that must be non-default for this parameter's default to be valid","items": {"type":"string"}},
+                    "nd-if-def": {"type":"array","description": "a list of parameters that must be default for this parameter's default to be valid","items": {"type":"string"}},
+                    "values": {"type":"array","description": "a list of valid values","items": {"type":"string"}},
+                    "display": {"type":"string","description": "prompt displayed for this parameter"},
+                    "multiline": {"type":"boolean","description": "whether this parameter can contain line breaks","default":false}
+                },
+                "required": ["name"]
+            }
+        }
+    }
+}
