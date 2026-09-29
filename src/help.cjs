@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v0.1.0";
+const VERSION = "v1.0.0";
 
 const DIR = path.join(path.dirname(__dirname), "help");
 
@@ -181,6 +181,34 @@ function reindex() {
     index = null;
 }
 
+/**
+ * takes a topic path, the last topic may be partially completed
+ * returns a list of potential options that the last topic could be
+ * @param {string[]} topics
+ * @returns {string[]}
+ */
+function getCompletion(topics) {
+    if (index === null) {
+        indexDir();
+    }
+    let currindex = index;
+    for (let i = 0; i < topics.length-1; i ++) {
+        if (topics[i].startsWith("&")) return [];
+        if (topics[i] in currindex) {
+            if (typeof currindex[topics[i]] === "object" && currindex[topics[i]] !== null) {
+                currindex = currindex[topics[i]];
+            } else {
+                return [];
+            }
+        } else {
+            return [];
+        }
+    }
+    const ents = Object.keys(currindex).filter(v => !v.startsWith("&"));
+    const hits = ents.filter(v => v.startsWith(topics[topics.length-1]));
+    return hits.length ? hits : ents;
+}
+
 function exec(line) {
     return eval(line);
 }
@@ -188,5 +216,6 @@ function exec(line) {
 exports.exec = exec;
 exports.getHelp = getHelp;
 exports.reindex = reindex;
+exports.getCompletion = getCompletion;
 exports.VERSION = VERSION;
 

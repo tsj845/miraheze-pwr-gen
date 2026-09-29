@@ -122,7 +122,10 @@ class Interface {
                 return [completions.length ? completions : that.#completions, line];
             }
             case "command": {
-                //
+                const parts = line.split(" ").filter((v, i, a) => v.length || i === a.length - 1);
+                if (parts[0] === "help") {
+                    return [help.getCompletion(parts.slice(1)), parts.slice(1)[parts.length-2] ?? ""];
+                }
             }
             default: {
                 return [[], line];
@@ -147,7 +150,7 @@ class Interface {
         }
         while (true) {
             this.#interface.prompt();
-            const command = (await this.#line()).split(" ");
+            const command = (await this.#line()).split(" ").filter(v => v.length);
             switch (this.#state) {
                 // do repl things
                 case "repl": {
