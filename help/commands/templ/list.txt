@@ -1,6 +1,0 @@
-templ list:
-  list templates, the currently selected template will have a '*' next to it
-
-See Also:
-  use `help templ` for information about template related commands
-

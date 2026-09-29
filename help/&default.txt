@@ -1,6 +1,0 @@
-Welcome to the Miraheze Practice WikiRequest Utility {VERSION}.
-
-Use `help` to display this page.
-Use `help topics` to display a list of topics.
-Use `help [topic] [subtopic]` for information on a topic or subtopic.
-use `help [command]` for information about a command.

@@ -1,8 +1,0 @@
-review [target]:
-  populate the practice wiki review template using the given target
-
-Usage:
-  [target] must be the id of the wiki request, optionally prefixed by "Special:RequestWikiQueue/"
-
-Notes:
-  Linked parameters may be multiline, in this case the parameter is terminated by entering the line '.stop'.

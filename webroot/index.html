@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MH Practice Wiki Requests</title>
+        <style>
+            #properties, #comments, #parameters {
+                display: none;
+            }
+            #main-content.populated {
+                #properties, #comments, #parameters {
+                    display: block;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="main-content">
+            <input type="text" id="rwq-id"><input type="button" value="Populate" id="populate-button"><br>
+            <div id="properties">Props</div>
+            <div id="comments">Comments</div>
+            <div id="parameters">Params</div>
+        </div>
+        <div id="output-container">
+            <input type="button" value="Copy WikiText" id="copy-button"><br>
+            <textarea readonly id="output"></textarea>
+        </div>
+        <script>
+            /**@type {HTMLTextAreaElement} */
+            const OUTPUTWIKITEXT = document.getElementById("output");
+            /**@type {HTMLInputElement} */
+            const RWQ_ID = document.getElementById("rwq-id");
+            /**
+             * @typedef {{sitename:string,domain:string,requester:string,private:boolean,realperson:boolean,nsfw:boolean,body:string,comments:{author:string,date:string,body:string}[]}} ReqData
+             */
+            document.getElementById("copy-button").onclick = () => {
+                navigator.clipboard.writeText(OUTPUTWIKITEXT.value);
+            };
+            document.getElementById("populate-button").onclick = async () => {
+                const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
+                const resp = await fetch(`https://${document.location.hostname}/scrape?id=${pageid}`, {method:"GET"});
+                if (resp.status !== 200) {
+                    alert(`Could not load request data: Error ${resp.status}`);
+                    return;
+                }
+                /**@type {ReqData} */
+                const data = await resp.json();
+            };
+        </script>
+    </body>
+</html>
