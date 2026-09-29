@@ -1,6 +1,6 @@
 This file documents the planned API for communicating with the scraper.
 
-GET hostname/scrape?id={request wiki id}
+GET hostname/pwr/scrape?id={request wiki id}
 RESPONSE:
 {
     sitename<string>: the requested sitename
@@ -19,4 +19,7 @@ Comment:
     date<string>: when the comment was authored
     body<string>: the content of the comment
 }
+
+POST hostname/pwr/cookie?pass={cookie password}
+BODY {cookie}
 
