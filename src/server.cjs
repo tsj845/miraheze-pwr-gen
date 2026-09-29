@@ -16,6 +16,13 @@ let COOKIE = "";
 const server = http.createServer(async (req, res) => {
     const url = new URL("http://localhost"+req.url);
     switch (url.pathname) {
+        case "/pwr": {
+            res.writeHead(200, {"content-type":"text/html","content-encoding":"gzip"});
+            const zipper = zlib.createGzip();
+            fs.createReadStream(path.join(DIR, "webroot", "index.html"), {"encoding":"utf-8"}).pipe(zipper);
+            zipper.pipe(res);
+            return;
+        }
         case "/pwr/scrape": {
             if (req.method !== "GET") {
                 res.writeHead(405, {"content-type":"text/plain"}).end("must use GET");
