@@ -37,7 +37,7 @@
             };
             document.getElementById("populate-button").onclick = async () => {
                 const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
-                const resp = await fetch(`https://${document.location.hostname}/scrape?id=${pageid}`, {method:"GET"});
+                const resp = await fetch(`https://${document.location.hostname}/pwr/scrape?id=${pageid}`, {method:"GET"});
                 if (resp.status !== 200) {
                     alert(`Could not load request data: Error ${resp.status}`);
                     return;

@@ -135,6 +135,7 @@ async function scrapePage(pageid, dst) {
         if (result === null) {
             return value ? null : "DATA NOT FOUND";
         }
+        return result;
     };
     const data = {
         "sitename":select("label#mw-input-wpsitename"),
