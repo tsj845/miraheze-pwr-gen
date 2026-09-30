@@ -32,10 +32,15 @@
                 flex-wrap: wrap;
                 justify-content: space-between; */
                 width: 100%;
+                > :not(:first-child) {
+                    margin-left: 5px;
+                }
             }
             pre#prop-body {
                 text-wrap: wrap;
                 word-wrap: break-word;
+                max-height: 40vh;
+                overflow-y: scroll;
             }
             #output {
                 /* width: 100%; */
@@ -50,6 +55,7 @@
             }
             #comments-container {
                 flex: 1 1 auto;
+                overflow-y: scroll;
             }
         </style>
     </head>
@@ -116,7 +122,25 @@
                 // const body = $("div#prop-body");
                 // body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
                 $("pre#prop-body").textContent = data.body;
+                $("div#comments-container").replaceChildren(...data.comments.map(makeComment));
             };
+            /**
+             * @param {{author:string,date:string,body:string}} comment
+             * @returns {HTMLElement}
+             */
+            function makeComment(comment) {
+                const d = document.createElement("div");
+                d.classList.add("comment");
+                const h = document.createElement("span");
+                h.classList.add("comment-header");
+                h.textContent = `${comment.author} at ${comment.date}`;
+                d.append(h);
+                const b = document.createElement("pre");
+                b.classList.add("comment-body");
+                b.textContent = comment.body;
+                d.append(b);
+                return d;
+            }
         </script>
     </body>
 </html>
