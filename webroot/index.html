@@ -4,13 +4,13 @@
         <title>MH Practice Wiki Requests</title>
         <style>
             #main-content {
-                width: 75vw;
+                width: 100%;
             }
             #rwq-container {
-                display: flex;
+                /* display: flex;
                 flex-direction: row;
                 flex-wrap: wrap;
-                justify-content: space-between;
+                justify-content: space-between; */
                 width: 100%;
             }
             /* #rwq-id {
@@ -26,7 +26,7 @@
             }
             #main-content.populated > #prop-comm-cont {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 3fr 2fr 3fr;
                 /* display: flex;
                 flex-direction: row;
                 flex-wrap: wrap;
@@ -37,6 +37,20 @@
                 text-wrap: wrap;
                 word-wrap: break-word;
             }
+            #output {
+                /* width: 100%; */
+                resize: none;
+            }
+            #comments {
+                display: flex;
+                flex-direction: column;
+            }
+            #comments > b {
+                flex: 0 1 auto;
+            }
+            #comments-container {
+                flex: 1 1 auto;
+            }
         </style>
     </head>
     <body>
@@ -44,20 +58,27 @@
             <span id="rwq-container"><input type="text" id="rwq-id"><input type="button" value="Populate" id="populate-button"></span>
             <div id="prop-comm-cont">
                 <div id="properties">
-                    <span id="prop-sitename"></span><br>
-                    <span id="prop-domain"></span><br>
-                    <span id="prop-private"></span><br>
-                    <span id="prop-realperson"></span><br>
-                    <span id="prop-nsfw"></span>
-                    <pre id="prop-body"></pre>
+                    <b>Request</b><br>
+                    <span id="prop-sitename">Sitename: N/A</span><br>
+                    <span id="prop-domain">Domain: N/A</span><br>
+                    <span id="prop-private">Private: N/A</span><br>
+                    <span id="prop-realperson">Real Person: N/A</span><br>
+                    <span id="prop-nsfw">NSFW: N/A</span><br>
+                    <span>Body:</span>
+                    <pre id="prop-body">N/A</pre>
                 </div>
-                <div id="comments">Comments</div>
+                <div id="comments">
+                    <b>Comments</b>
+                    <div id="comments-container"></div>
+                </div>
+                <div id="parameters">
+                    <b>Template Fields</b><br>
+                </div>
             </div>
-            <div id="parameters">Params</div>
         </div>
         <div id="output-container">
             <input type="button" value="Copy WikiText" id="copy-button"><br>
-            <textarea readonly id="output"></textarea>
+            <textarea readonly id="output" rows="10" cols="50"></textarea>
         </div>
         <script>
             /**@type {typeof document.querySelector} */

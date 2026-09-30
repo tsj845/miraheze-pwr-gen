@@ -137,6 +137,10 @@ async function scrapePage(pageid, dst) {
         }
         return value ? result === value : result;
     };
+    /**
+     * @typedef {{sitename:string,domain:string,requester:string,private:boolean,realperson:boolean,nsfw:boolean,body:string,comments:{author:string,date:string,body:string}[]}} ReqData
+     */
+    /**@type {ReqData} */
     const data = {
         "sitename":select("label#mw-input-wpsitename"),
         "domain":select("label#mw-input-wpurl"),
@@ -144,8 +148,21 @@ async function scrapePage(pageid, dst) {
         "private":select("label#mw-input-wpprivate > b","Yes"),
         "realperson":select("label#mw-input-wpbio > b","Yes"),
         "nsfw":select("label#mw-input-wpnsfw > b","Yes"),
-        "body":select("label#mw-input-wpreason")
+        "body":select("label#mw-input-wpreason"),
+        "comments": []
     };
+    const comments = content.querySelector("fieldset#mw-section-comments");
+    if (comments) {
+        for (const comment of comments.querySelectorAll("div.oo-ui-fieldLayout-body")) {
+            const header = comment.querySelector("span.oo-ui-fieldLayout-header > label")?.textContent ?? "by UNDEFINED at NOT FOUND";
+            const body = (comment.querySelector("div.oo-ui-fieldLayout-field > label")?.childNodes?.map(node => node.nodeType===HTMLParser.NodeType.TEXT_NODE?node.text:node.textContent).map(v => v.trim()).filter(v => v.length).join("\n"))??"NOT FOUND";
+            data.comments.push({
+                "author": header.slice(header.indexOf("by")+3, header.lastIndexOf("at")-1),
+                "date": header.slice(header.lastIndexOf("at")+3),
+                "body": body
+            });
+        }
+    }
     dst.writeHead(200, {"content-type":"application/json"}).end(JSON.stringify(data));
 }
 
