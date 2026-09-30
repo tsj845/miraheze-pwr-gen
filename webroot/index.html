@@ -40,11 +40,12 @@
             <span id="rwq-container"><input type="text" id="rwq-id"><input type="button" value="Populate" id="populate-button"></span>
             <div id="prop-comm-cont">
                 <div id="properties">
-                    <span id="prop-sitename"></span>
-                    <span id="prop-domain"></span>
-                    <span id="prop-private"></span>
-                    <span id="prop-realperson"></span>
+                    <span id="prop-sitename"></span><br>
+                    <span id="prop-domain"></span><br>
+                    <span id="prop-private"></span><br>
+                    <span id="prop-realperson"></span><br>
                     <span id="prop-nsfw"></span>
+                    <div id="prop-body"></div>
                 </div>
                 <div id="comments">Comments</div>
             </div>
@@ -81,6 +82,9 @@
                 $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
                 $("span#prop-realperson").textContent = `Real Person: ${["No","Yes"][Number(data.realperson)]}`;
                 $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
+                /**@type {HTMLDivElement} */
+                const body = $("div#prop-body");
+                body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
             };
         </script>
     </body>
