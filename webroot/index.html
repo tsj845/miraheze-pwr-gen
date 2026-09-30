@@ -11,7 +11,7 @@
                 height: calc(var(--main-height) - 16px);
             }
             #output-container {
-                height: calc(100vh - var(--main-height) - 16px);
+                height: calc(100vh - var(--main-height));
             }
             #rwq-container {
                 /* display: flex;
@@ -39,7 +39,8 @@
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: space-between; */
-                width: 100%;
+                /* width: 100%; */
+                max-width: max(825px, 50vw);
                 height: calc(var(--main-height) - 16px - 1.5em);
                 > :not(:first-child) {
                     margin-left: 2px;
@@ -62,7 +63,7 @@
             #output {
                 /* width: 100%; */
                 resize: none;
-                height: calc(100vh - var(--main-height) - 16px - 1.5em);
+                height: calc(100vh - var(--main-height) - 8px - 1.5em);
             }
             #comments {
                 display: flex;
