@@ -29,23 +29,23 @@
             "name": "reason-nocom",
             "display": "Reason",
             "default": "Comments indicate request changed substantially.",
-            "ro-if-udf": ["act_nocom"],
-            "nd-if-def": ["act_nocom"],
+            "ro-if-udf": ["act-nocom"],
+            "nd-if-def": ["act-nocom"],
             "multiline": true
         },
         {
             "name": "act-com",
             "display": "Action (including comments)",
             "default": "N/A",
-            "nd-if-udf": ["act_nocom"],
+            "nd-if-udf": ["act-nocom"],
             "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
         },
         {
             "name": "reason-com",
             "display": "Reason",
             "default": "Action not different.",
-            "ro-if-udf": ["act_com"],
-            "nd-if-def": ["act_com"],
+            "ro-if-udf": ["act-com"],
+            "nd-if-def": ["act-com"],
             "multiline": true
         }
     ]
