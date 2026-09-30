@@ -254,7 +254,7 @@
                                 //         return;
                                 //     }
                                 // }
-                                c.querySelector("select").options.item(0).disabled = param["nd-if-def"].some(p => template_map[p].v===null);
+                                c.querySelector("select").options.item(0).disabled = param["nd-if-udf"].some(p => template_map[p].v===null);
                             }
                             if (param["nd-if-def"]?.includes(pname)) {
                                 c.querySelector("select").options.item(0).disabled = param["nd-if-def"].some(p => template_map[p].v!==null);
