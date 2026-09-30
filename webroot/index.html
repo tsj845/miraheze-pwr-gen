@@ -261,6 +261,9 @@
                         }
                     });
                 }
+                for (const param of template_data.params) {
+                    changeHooks.forEach(h => h(param.name));
+                }
                 $("#parameters").append(...list);
             }
             main();
