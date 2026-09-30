@@ -237,7 +237,7 @@
                         el.id = `tm-param-${ID}-in`;
                         c.append(el);
                     }
-                    el.onchange = () => {template_map[param.name]=getValue();changeHooks.forEach(hook => {hook(param.name);});};
+                    el.onchange = () => {template_map[param.name].v=getValue();changeHooks.forEach(hook => {hook(param.name);});};
                     changeHooks.push((pname, ov, nv) => {
                         if (param["ro-if-udf"]?.includes(pname)) {
                             c.hidden = param["ro-if-udf"].some(p => template_map[p].v===null);
