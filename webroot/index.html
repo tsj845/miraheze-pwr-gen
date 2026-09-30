@@ -245,6 +245,7 @@
                             if (c.hidden) return;
                         }
                         if (param.values && param.default) {
+                            let dis = false;
                             if (param["nd-if-udf"]?.includes(pname)) {
                                 // if (c.hidden) {
                                 //     c.hidden = !param["nd-if-udf"].some(p => template_map[p].v===null);
@@ -253,10 +254,17 @@
                                 //         return;
                                 //     }
                                 // }
-                                c.querySelector("select").options.item(0).disabled = param["nd-if-udf"].some(p => template_map[p].v===null);
+                                dis = param["nd-if-udf"].some(p => template_map[p].v===null);
                             }
                             if (param["nd-if-def"]?.includes(pname)) {
-                                c.querySelector("select").options.item(0).disabled = param["nd-if-def"].some(p => template_map[p].v!==null);
+                                dis = param["nd-if-def"].some(p => template_map[p].v!==null);
+                            }
+                            const s = c.querySelector("select");
+                            s.options.item(0).disabled = dis;
+                            if (dis) {
+                                if (s.selectedIndex === 0) {
+                                    s.selectedIndex = -1;
+                                }
                             }
                         }
                     });
