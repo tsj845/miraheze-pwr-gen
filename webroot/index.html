@@ -275,7 +275,18 @@
                 for (const param of template_data.params) {
                     changeHooks.forEach(h => h(param.name));
                 }
+                changeHooks.push(renderTemplate);
                 $("#parameters").append(...list);
+            }
+            function renderTemplate() {
+                OUTPUTWIKITEXT.value = template_data.template.map(content => {
+                    if (typeof content === "string") {
+                        return content;
+                    } else {
+                        if (content.break) return "\n";
+                        return template_map[content.param] ?? (template_data.params[content.param].default ?? "UNDEFINED");
+                    }
+                });
             }
             main();
         </script>
