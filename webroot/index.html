@@ -137,7 +137,11 @@
             /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
             const template_map = {};
             async function main() {
-                template_data = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
+                const template_req = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
+                if (template_req.status === 200) {
+                    template_data = await template_req.json();
+                    makeTemplateParams();
+                }
                 document.getElementById("copy-button").onclick = () => {
                     navigator.clipboard.writeText(OUTPUTWIKITEXT.value);
                 };
