@@ -49,6 +49,7 @@
             #comments {
                 display: flex;
                 flex-direction: column;
+                max-height: 60vh;
             }
             #comments > b {
                 flex: 0 1 auto;
@@ -57,9 +58,9 @@
                 flex: 1 1 auto;
                 overflow-y: scroll;
             }
-            span.comment-header {
+            .comment-header {
                 text-wrap: wrap;
-                word-break: break-all;
+                overflow-wrap: anywhere;
             }
             pre.comment-body {
                 text-wrap: wrap;
@@ -139,7 +140,7 @@
             function makeComment(comment) {
                 const d = document.createElement("div");
                 d.classList.add("comment");
-                const h = document.createElement("span");
+                const h = document.createElement("b");
                 h.classList.add("comment-header");
                 h.textContent = `${comment.author} at ${comment.date}`;
                 d.append(h);
