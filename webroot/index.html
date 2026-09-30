@@ -136,7 +136,7 @@
             let template_data;
             /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
             const template_map = {};
-            /**@type {(ReqData&{pageid:string})|null} */
+            /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[]}|null} */
             let rwq_data = null;
             async function main() {
                 const template_req = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
@@ -158,6 +158,9 @@
                     const data = await resp.json();
                     rwq_data = data;
                     rwq_data.pageid = `Special:RequestWikiQueue/${pageid}`;
+                    for (const key of ["private","realperson","nsfw"]) {
+                        rwq_data[key] = ["N","Y"][Number(data[key])];
+                    }
                     $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
                     $("span#prop-domain").textContent = `Domain: ${data.domain}`;
                     $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;

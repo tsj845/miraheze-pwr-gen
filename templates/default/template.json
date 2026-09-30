@@ -1,7 +1,7 @@
 {
     "$schema": "../../.schema/template.schema.json",
     "template": [
-        "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ==",{"break": true},
+        "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===",{"break": true},
         "~~~~",{"break": true},
         {"break": true},
         {"param":"=body"},
