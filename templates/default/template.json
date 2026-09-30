@@ -1,0 +1,52 @@
+{
+    "$schema": "../../.schema/template.schema.json",
+    "template": [
+        "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ==",{"break": true},
+        "~~~~",{"break": true},
+        {"break": true},
+        {"param":"=body"},
+        {"break": true},
+        "'''PRIVATE: ",{"param":"=private"},"'''<br>",{"break": true},
+        "'''REAL PERSON: ",{"param":"=realperson"},"'''<br>",{"break": true},
+        "'''NSFW: ",{"param":"=nsfw"},"'''<br>",{"break": true},
+        {"break": true},
+        "'''ACTION (disregarding comments): ",{"param":"act-nocom"},"'''<br>",{"break": true},
+        {"param":"reason-nocom"},{"break": true},
+        {"break": true},
+        "'''ACTION (including comments): ",{"param":"act-com"},"'''<br>",{"break": true},
+        {"param":"reason-com"},{"break": true},
+        {"break": true},
+        "==== FEEDBACK ===="
+    ],
+    "params": [
+        {
+            "name": "act-nocom",
+            "display": "Action (ignoring comments)",
+            "default": "N/A",
+            "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+        },
+        {
+            "name": "reason-nocom",
+            "display": "Reason",
+            "default": "Comments indicate request changed substantially.",
+            "ro-if-udf": ["act_nocom"],
+            "nd-if-def": ["act_nocom"],
+            "multiline": true
+        },
+        {
+            "name": "act-com",
+            "display": "Action (including comments)",
+            "default": "N/A",
+            "nd-if-udf": ["act_nocom"],
+            "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+        },
+        {
+            "name": "reason-com",
+            "display": "Reason",
+            "default": "Action not different.",
+            "ro-if-udf": ["act_com"],
+            "nd-if-def": ["act_com"],
+            "multiline": true
+        }
+    ]
+}

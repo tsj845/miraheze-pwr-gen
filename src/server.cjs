@@ -17,6 +17,10 @@ const server = http.createServer(async (req, res) => {
     const url = new URL("http://localhost"+req.url);
     switch (url.pathname) {
         case "/pwr": {
+            if (!req.headers["accept-encoding"]?.includes("gzip")) {
+                res.writeHead(406, {"content-type":"text/plain"}).end("this server only sends gzip");
+                return;
+            }
             res.writeHead(200, {"content-type":"text/html","content-encoding":"gzip"});
             const zipper = zlib.createGzip();
             fs.createReadStream(path.join(DIR, "webroot", "index.html"), {"encoding":"utf-8"}).pipe(zipper);
@@ -59,6 +63,26 @@ const server = http.createServer(async (req, res) => {
                 responded = true;
                 res.writeHead(500, {"content-type":"text/plain"}).end("problem reading body");
             });
+            return;
+        }
+        case "/pwr/template": {
+            if (!req.headers["accept-encoding"]?.includes("gzip")) {
+                res.writeHead(406, {"content-type":"text/plain"}).end("this server only sends gzip");
+                return;
+            }
+            const templatename = url.searchParams.get("id");
+            if (!templatename || templatename.includes(".") || templatename.includes("/")) {
+                res.writeHead(400, {"content-type":"text/plain"}).end("invalid template name");
+                return;
+            }
+            try {
+                const zipper = zlib.createGzip();
+                fs.createReadStream(path.join(DIR, "templates", templatename, "template.json"), {encoding:"utf-8"}).pipe(zipper);
+                res.writeHead(200, {"content-type":"application/json","content-encoding":"gzip"});
+                zipper.pipe(res);
+            } catch {
+                res.writeHead(404, {"content-type":"text/plain"}).end("template not found");
+            }
             return;
         }
         default: {

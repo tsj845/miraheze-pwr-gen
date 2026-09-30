@@ -112,46 +112,51 @@
             /**
              * @typedef {{sitename:string,domain:string,requester:string,private:boolean,realperson:boolean,nsfw:boolean,body:string,comments:{author:string,date:string,body:string}[]}} ReqData
              */
-            document.getElementById("copy-button").onclick = () => {
-                navigator.clipboard.writeText(OUTPUTWIKITEXT.value);
-            };
-            document.getElementById("populate-button").onclick = async () => {
-                const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
-                const resp = await fetch(`https://${document.location.hostname}/pwr/scrape?id=${pageid}`, {method:"GET"});
-                if (resp.status !== 200) {
-                    alert(`Could not load request data: Error ${resp.status}`);
-                    return;
+            let template_data;
+            async function main() {
+                template_data = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
+                document.getElementById("copy-button").onclick = () => {
+                    navigator.clipboard.writeText(OUTPUTWIKITEXT.value);
+                };
+                document.getElementById("populate-button").onclick = async () => {
+                    const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
+                    const resp = await fetch(`https://${document.location.hostname}/pwr/scrape?id=${pageid}`, {method:"GET"});
+                    if (resp.status !== 200) {
+                        alert(`Could not load request data: Error ${resp.status}\n${await resp.text()}`);
+                        return;
+                    }
+                    /**@type {ReqData} */
+                    const data = await resp.json();
+                    $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
+                    $("span#prop-domain").textContent = `Domain: ${data.domain}`;
+                    $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
+                    $("span#prop-realperson").textContent = `Real Person: ${["No","Yes"][Number(data.realperson)]}`;
+                    $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
+                    // /**@type {HTMLDivElement} */
+                    // const body = $("div#prop-body");
+                    // body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
+                    $("pre#prop-body").textContent = data.body;
+                    $("div#comments-container").replaceChildren(...data.comments.map(makeComment));
+                };
+                /**
+                 * @param {{author:string,date:string,body:string}} comment
+                 * @returns {HTMLElement}
+                 */
+                function makeComment(comment) {
+                    const d = document.createElement("div");
+                    d.classList.add("comment");
+                    const h = document.createElement("b");
+                    h.classList.add("comment-header");
+                    h.textContent = `${comment.author} at ${comment.date}`;
+                    d.append(h);
+                    const b = document.createElement("pre");
+                    b.classList.add("comment-body");
+                    b.textContent = comment.body;
+                    d.append(b);
+                    return d;
                 }
-                /**@type {ReqData} */
-                const data = await resp.json();
-                $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
-                $("span#prop-domain").textContent = `Domain: ${data.domain}`;
-                $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
-                $("span#prop-realperson").textContent = `Real Person: ${["No","Yes"][Number(data.realperson)]}`;
-                $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
-                // /**@type {HTMLDivElement} */
-                // const body = $("div#prop-body");
-                // body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
-                $("pre#prop-body").textContent = data.body;
-                $("div#comments-container").replaceChildren(...data.comments.map(makeComment));
-            };
-            /**
-             * @param {{author:string,date:string,body:string}} comment
-             * @returns {HTMLElement}
-             */
-            function makeComment(comment) {
-                const d = document.createElement("div");
-                d.classList.add("comment");
-                const h = document.createElement("b");
-                h.classList.add("comment-header");
-                h.textContent = `${comment.author} at ${comment.date}`;
-                d.append(h);
-                const b = document.createElement("pre");
-                b.classList.add("comment-body");
-                b.textContent = comment.body;
-                d.append(b);
-                return d;
             }
+            main();
         </script>
     </body>
 </html>
