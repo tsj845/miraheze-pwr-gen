@@ -3,21 +3,51 @@
     <head>
         <title>MH Practice Wiki Requests</title>
         <style>
-            #properties, #comments, #parameters {
+            #main-content {
+                width: fit-content;
+            }
+            #rwq-container {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                width: 50vw;
+            }
+            /* #rwq-id {
+                width: 50vw;
+            } */
+            #main-content > div {
                 display: none;
             }
             #main-content.populated {
-                #properties, #comments, #parameters {
+                & > div {
                     display: block;
                 }
+            }
+            #main-content.populated > #prop-comm-cont {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                /* display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between; */
+                width: 100%;
             }
         </style>
     </head>
     <body>
-        <div id="main-content">
-            <input type="text" id="rwq-id"><input type="button" value="Populate" id="populate-button"><br>
-            <div id="properties">Props</div>
-            <div id="comments">Comments</div>
+        <div id="main-content" class="populated">
+            <span id="rwq-container"><input type="text" id="rwq-id"><input type="button" value="Populate" id="populate-button"></span>
+            <div id="prop-comm-cont">
+                <div id="properties">
+                    <span id="prop-sitename"></span>
+                    <span id="prop-domain"></span>
+                    <span id="prop-private"></span>
+                    <span id="prop-realperson"></span>
+                    <span id="prop-nsfw"></span>
+                </div>
+                <div id="comments">Comments</div>
+            </div>
             <div id="parameters">Params</div>
         </div>
         <div id="output-container">
@@ -25,6 +55,8 @@
             <textarea readonly id="output"></textarea>
         </div>
         <script>
+            /**@type {typeof document.querySelector} */
+            const $ = document.querySelector.bind(document);
             /**@type {HTMLTextAreaElement} */
             const OUTPUTWIKITEXT = document.getElementById("output");
             /**@type {HTMLInputElement} */
@@ -44,6 +76,11 @@
                 }
                 /**@type {ReqData} */
                 const data = await resp.json();
+                $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
+                $("span#prop-domain").textContent = `Domain: ${data.domain}`;
+                $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
+                $("span#prop-realperson").textContent = `Real Person: ${["No","Yes"][Number(data.realperson)]}`;
+                $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
             };
         </script>
     </body>
