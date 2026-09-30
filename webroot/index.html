@@ -235,7 +235,7 @@
                         getValue = () => t.value;
                         t.id = `tm-param-${ID}-in`;
                         c.append(t);
-                        s.onchange = () => {changeHooks.forEach(hook => {hook(param.name);});};
+                        t.onchange = () => {changeHooks.forEach(hook => {hook(param.name);});};
                     }
                     changeHooks.push((pname, ov, nv) => {
                         if (param["ro-if-udf"]?.includes(pname)) {
