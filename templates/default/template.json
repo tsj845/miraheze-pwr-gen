@@ -2,9 +2,10 @@
     "$schema": "../../.schema/template.schema.json",
     "template": [
         "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===",{"break": true},
-        "~~~~",{"break": true},
+        "~~~~~",{"break": true},
         {"break": true},
         {"param":"=body"},
+        {"break": true},
         {"break": true},
         "'''PRIVATE: ",{"param":"=private"},"'''<br>",{"break": true},
         "'''REAL PERSON: ",{"param":"=realperson"},"'''<br>",{"break": true},
@@ -16,7 +17,9 @@
         "'''ACTION (including comments): ",{"param":"act-com"},"'''<br>",{"break": true},
         {"param":"reason-com"},{"break": true},
         {"break": true},
-        "==== FEEDBACK ===="
+        "==== FEEDBACK ====",
+        {"break": true},
+        {"break": true}
     ],
     "params": [
         {
