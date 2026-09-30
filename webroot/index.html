@@ -136,6 +136,8 @@
             let template_data;
             /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
             const template_map = {};
+            /**@type {ReqData|null} */
+            let rwq_data = null;
             async function main() {
                 const template_req = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
                 if (template_req.status === 200) {
@@ -154,6 +156,7 @@
                     }
                     /**@type {ReqData} */
                     const data = await resp.json();
+                    rwq_data = data;
                     $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
                     $("span#prop-domain").textContent = `Domain: ${data.domain}`;
                     $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
@@ -279,11 +282,15 @@
                 $("#parameters").append(...list);
             }
             function renderTemplate() {
+                if (rwq_data === null) return;
                 OUTPUTWIKITEXT.value = template_data.template.map(content => {
                     if (typeof content === "string") {
                         return content;
                     } else {
                         if (content.break) return "\n";
+                        if (content.param[0] === "=") {
+                            return rwq_data[content.param.slice(1)];
+                        }
                         return template_map[content.param] ?? (template_data.params[content.param].default ?? "UNDEFINED");
                     }
                 });
