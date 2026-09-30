@@ -4,14 +4,14 @@
         <title>MH Practice Wiki Requests</title>
         <style>
             #main-content {
-                width: fit-content;
+                width: 75vw;
             }
             #rwq-container {
                 display: flex;
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: space-between;
-                width: 50vw;
+                width: 100%;
             }
             /* #rwq-id {
                 width: 50vw;
@@ -32,6 +32,10 @@
                 flex-wrap: wrap;
                 justify-content: space-between; */
                 width: 100%;
+            }
+            pre#prop-body {
+                text-wrap: wrap;
+                word-wrap: break-word;
             }
         </style>
     </head>
@@ -62,6 +66,11 @@
             const OUTPUTWIKITEXT = document.getElementById("output");
             /**@type {HTMLInputElement} */
             const RWQ_ID = document.getElementById("rwq-id");
+            RWQ_ID.onkeyup = (ev) => {
+                if (ev.code === "Return" || ev.code === "Enter") {
+                    $("#populate-button").click();
+                }
+            };
             /**
              * @typedef {{sitename:string,domain:string,requester:string,private:boolean,realperson:boolean,nsfw:boolean,body:string,comments:{author:string,date:string,body:string}[]}} ReqData
              */
