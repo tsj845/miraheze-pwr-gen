@@ -293,7 +293,7 @@
                         if (content.param[0] === "=") {
                             return rwq_data[content.param.slice(1)];
                         }
-                        return template_map[content.param].v ?? (template_data.params[content.param].default ?? "UNDEFINED");
+                        return template_map[content.param].v ?? (template_data.params.find(v => v.name === content.param).default ?? "UNDEFINED");
                     }
                 }).join("");
             }
