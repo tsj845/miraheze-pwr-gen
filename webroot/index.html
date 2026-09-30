@@ -45,7 +45,7 @@
                     <span id="prop-private"></span><br>
                     <span id="prop-realperson"></span><br>
                     <span id="prop-nsfw"></span>
-                    <div id="prop-body"></div>
+                    <pre id="prop-body"></pre>
                 </div>
                 <div id="comments">Comments</div>
             </div>
@@ -82,9 +82,10 @@
                 $("span#prop-private").textContent = `Private: ${["No","Yes"][Number(data.private)]}`;
                 $("span#prop-realperson").textContent = `Real Person: ${["No","Yes"][Number(data.realperson)]}`;
                 $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
-                /**@type {HTMLDivElement} */
-                const body = $("div#prop-body");
-                body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
+                // /**@type {HTMLDivElement} */
+                // const body = $("div#prop-body");
+                // body.append(...data.body.split("\n").flatMap(l => [l, document.createElement("br")]));
+                $("pre#prop-body").textContent = data.body;
             };
         </script>
     </body>
