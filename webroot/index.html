@@ -202,43 +202,42 @@
                     c.append(l);
                     /**@type {()=>string} */
                     let getValue;
+                    let el;
                     if (param.values) {
-                        const s = document.createElement("select");
-                        s.onchange = () => {changeHooks.forEach(hook => {hook(param.name);});};
+                        el = document.createElement("select");
                         getValue = () => {
-                            const ind = Number(s.value);
+                            const ind = Number(el.value);
                             // catches intended -1 from default and NaN from no selection
                             if (!(ind >= 0)) return null;
                             return param.values[ind];
                         }
-                        s.id = `tm-param-${ID}-in`;
+                        el.id = `tm-param-${ID}-in`;
                         if (param.default) {
                             const o = document.createElement("option");
                             o.value = "-1";
                             o.defaultSelected = true;
                             o.textContent = param.default;
-                            s.append(o);
+                            el.append(o);
                         }
-                        s.append(...param.values.map((val, i) => {
+                        el.append(...param.values.map((val, i) => {
                             const o = document.createElement("option");
                             o.value = String(i);
                             o.textContent = val;
                             return o;
                         }));
-                        c.append(s);
+                        c.append(el);
                     } else {
-                        let t;
                         if (param.multiline) {
-                            t = document.createElement("textarea");
+                            el = document.createElement("textarea");
                             c.append(document.createElement("br"));
                         } else {
-                            t = document.createElement("input");
+                            el = document.createElement("input");
                         }
-                        getValue = () => t.value;
-                        t.id = `tm-param-${ID}-in`;
-                        c.append(t);
-                        t.onchange = () => {changeHooks.forEach(hook => {hook(param.name);});};
+                        getValue = () => el.value;
+                        el.id = `tm-param-${ID}-in`;
+                        c.append(el);
                     }
+                    el.onchange = () => {template_map[param.name]=getValue();changeHooks.forEach(hook => {hook(param.name);});};
                     changeHooks.push((pname, ov, nv) => {
                         if (param["ro-if-udf"]?.includes(pname)) {
                             c.hidden = param["ro-if-udf"].some(p => template_map[p].v===null);
