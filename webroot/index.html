@@ -8,7 +8,7 @@
             }
             #main-content {
                 width: 100%;
-                max-height: calc(var(--main-height) - 16px);
+                height: calc(var(--main-height) - 16px);
             }
             #output-container {
                 height: calc(100vh - var(--main-height) - 16px);
@@ -32,8 +32,9 @@
                 }
             }
             #main-content.populated > #prop-comm-cont {
-                display: grid;
-                grid-template-columns: 3fr 2fr 3fr;
+                /* display: grid;
+                grid-template-columns: 3fr 2fr 3fr; */
+                display: flex;
                 /* display: flex;
                 flex-direction: row;
                 flex-wrap: wrap;
@@ -58,6 +59,7 @@
             #comments {
                 display: flex;
                 flex-direction: column;
+                height: calc(var(--main-height) - 16px);
                 /* max-height: 60vh; */
             }
             #comments > b {
