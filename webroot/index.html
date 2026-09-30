@@ -225,10 +225,12 @@
                             o.textContent = val;
                             return o;
                         }));
+                        c.append(s);
                     } else {
                         let t;
                         if (param.multiline) {
                             t = document.createElement("textarea");
+                            c.append(document.createElement("br"));
                         } else {
                             t = document.createElement("input");
                         }
