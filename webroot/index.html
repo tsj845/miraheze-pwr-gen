@@ -138,6 +138,23 @@
             const template_map = {};
             /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[]}|null} */
             let rwq_data = null;
+            /**
+             * creates a deep copy of an object
+             * @template T
+             * @param {T} obj
+             * @returns {T}
+             */
+            function clone(obj) {
+                if (obj === null || ["string","number","bigint","boolean","function","symbol","undefined"].includes(typeof obj)) {
+                    return obj;
+                }
+                if (Array.isArray(obj)) return obj.map(clone);
+                const c = {};
+                for (const key in obj) {
+                    c[key] = clone(obj[key]);
+                }
+                return c;
+            }
             async function main() {
                 const template_req = await fetch(`https://${document.location.hostname}/pwr/template?id=default`, {"method":"GET"});
                 if (template_req.status === 200) {
@@ -156,7 +173,7 @@
                     }
                     /**@type {ReqData} */
                     const data = await resp.json();
-                    rwq_data = data;
+                    rwq_data = clone(data);
                     rwq_data.pageid = `Special:RequestWikiQueue/${pageid}`;
                     for (const key of ["private","realperson","nsfw"]) {
                         rwq_data[key] = ["N","Y"][Number(data[key])];
