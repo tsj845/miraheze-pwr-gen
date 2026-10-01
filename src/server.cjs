@@ -78,7 +78,7 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
             req_sources.push(req.socket.remoteAddress);
-            if (request_count > settings.REQ_HIGH) {
+            if (req_sources.length > settings.REQ_HIGH) {
                 req_high_latch = true;
                 mailtransport.sendMail({
                     from:`"Automation" <${settings.MAIL_CONFIG.BOT_USER}>`,
