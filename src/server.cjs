@@ -10,6 +10,8 @@ const nodemailer = require("nodemailer");
 
 const DIR = path.dirname(__dirname);
 
+fs.writeFileSync(path.join(DIR, "pid.txt"), process.pid.toString());
+
 /**
  * @type {{PORT:number,COOKIE_PASS:string,REQ_HIGH:number,MAIL_CONFIG:{HOST:string,BOT_USER:string,BOT_PASS:string,DESTINATION:string}}}
  */
