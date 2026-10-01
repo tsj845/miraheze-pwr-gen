@@ -28,7 +28,8 @@ const mailtransport = nodemailer.createTransport({
     requireTLS: false,
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000
 });
 
 let COOKIE = "";
@@ -80,13 +81,17 @@ const server = http.createServer(async (req, res) => {
             req_sources.push(req.socket.remoteAddress);
             if (req_sources.length > settings.REQ_HIGH) {
                 req_high_latch = true;
-                mailtransport.sendMail({
-                    from:`"Automation" <${settings.MAIL_CONFIG.BOT_USER}>`,
-                    to: settings.MAIL_CONFIG.DESTINATION,
-                    subject: "MH PWR High Requests",
-                    text: "irritation\n"+req_sources.join("\n")
-                });
                 res.writeHead(503, {"content-type":"text/plain"}).end("too many requests");
+                try {
+                    await mailtransport.sendMail({
+                        from:`"Automation" <${settings.MAIL_CONFIG.BOT_USER}>`,
+                        to: settings.MAIL_CONFIG.DESTINATION,
+                        subject: "MH PWR High Requests",
+                        text: "irritation\n"+req_sources.join("\n")
+                    });
+                } catch (E) {
+                    console.log(`failed to send email:\n${E}\n${E.stack}`);
+                }
                 return;
             }
             await scrapePage(pageid, res);
