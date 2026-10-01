@@ -36,12 +36,14 @@ let COOKIE = "";
 
 
 let req_high_latch = false;
-const req_sources = [];
+let req_sources = [];
 // request count decrementer
 let rcdecid = setInterval(() => {
-    if (req_sources.length) {
-        req_sources.shift();
-    }
+    // if (req_sources.length) {
+    //     req_sources.shift();
+    // }
+    const n = Date.now();
+    req_sources = req_sources.filter(v => n-v[1] < 60000);
     // unset the latch
     if (!req_sources.length) {
         req_high_latch = false;
@@ -78,7 +80,7 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(503, {"content-type":"text/plain"}).end("too many requests");
                 return;
             }
-            req_sources.push(req.socket.remoteAddress);
+            req_sources.push([req.socket.remoteAddress, Date.now()]);
             if (req_sources.length > settings.REQ_HIGH) {
                 req_high_latch = true;
                 res.writeHead(503, {"content-type":"text/plain"}).end("too many requests");
