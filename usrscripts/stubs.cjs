@@ -1,6 +1,6 @@
 /**@module stubs */
 /**
- * @typedef {{type:"send",id:string}|{type:"data",data:ReqData,id:string}} MSG
+ * @typedef {{type:"send",id:string}|{type:"data",data:ReqData,id:string}|{type:"ready"}} MSG
  */
 /**
  * @typedef {{pageid:string,sitename:string,domain:string,requester:string,private:boolean,realperson:boolean,nsfw:boolean,body:string,comments:{author:string,date:string,body:string}[]}} ReqData

@@ -95,6 +95,24 @@
         // render the template
         // renderTemplate();
     };
+    /**
+     * helper function to render a comment
+     * @param {{author:string,date:string,body:string}} comment
+     * @returns {HTMLElement}
+     */
+    function makeComment(comment) {
+        const d = document.createElement("div");
+        d.classList.add("comment");
+        const h = document.createElement("b");
+        h.classList.add("comment-header");
+        h.textContent = `${comment.author} at ${comment.date}`;
+        d.append(h);
+        const b = document.createElement("pre");
+        b.classList.add("comment-body");
+        b.textContent = comment.body;
+        d.append(b);
+        return d;
+    }
 
 	const ifr = document.createElement("iframe");
 	ifr.sandbox = "allow-scripts allow-same-origin";
@@ -109,6 +127,12 @@
                 DATA_REQ_MAP[ev.data.id](ev.data.data);
                 break;
             }
+            case "ready": {
+                if (typeof DATA_REQ_MAP["ready"] === "function") {
+                    DATA_REQ_MAP["ready"]();
+                }
+                break;
+            }
         }
     });
     let dreq_id = 0;
@@ -117,13 +141,19 @@
      * @returns {Promise<ReqData>}
      */
     function scrape(pageid) {
-        return new Promise(r => {
+        return new Promise(async r => {
             const id = `dreq-${dreq_id++}`;
             DATA_REQ_MAP[id] = r;
             ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
-            ifr.contentWindow.onload = () => {
-                ifr.contentWindow.postMessage({type:"send",id});
-            };
+            await new Promise(r2 => {DATA_REQ_MAP["ready"]=r2;});
+            ifr.contentWindow.postMessage({type:"send",id});
+            // setTimeout(() => {
+            //     ifr.contentDocument.onreadystatechange = () => {
+            //         if (ifr.contentDocument.readyState === "complete") {
+            //             ifr.contentDocument.onreadystatechange = () => {};
+            //         }
+            //     };
+            // }, 1);
         });
     }
 }

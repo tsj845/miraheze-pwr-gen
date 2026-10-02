@@ -51,4 +51,5 @@
             }
         } catch {}
     });
+    window.parent.postMessage({type:"ready"});
 }
