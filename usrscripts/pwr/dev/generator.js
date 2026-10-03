@@ -236,6 +236,8 @@
         for (const key of ["private","realperson","nsfw"]) {
             rwq_data[key] = ["N","Y"][Number(data[key])];
         }
+        // because we can't have nice things, we have to use canon template parameters and this
+        // dumb hack to avoid expanding the signatures too early
         rwq_data.ts = "~".repeat(5);
         rwq_data.sig = "~".repeat(3);
         rwq_data.sigts = "~".repeat(4);
