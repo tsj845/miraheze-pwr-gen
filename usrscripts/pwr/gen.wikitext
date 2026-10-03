@@ -16,7 +16,7 @@ This tool has a git repository (it's not mirrored, but I keep them up to date wi
 ==== Setup ====
 Doing the setup up for PWR Gen is super simple! Just add the following to your [[Special:MyPage/common.js]]:
 <pre>
-jQuery(function ($) {
+jQuery(function () {
     mw.loader.load("/w/index.php?title=User:Person0192837465/PWR-loader.js&action=raw&ctype=text/javascript");
 });
 </pre>
