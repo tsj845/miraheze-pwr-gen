@@ -1,0 +1,57 @@
+{
+    "$schema": "../../../.schema/templates.schema.json",
+    "default": {
+        "template": [
+            "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===",{"break": true},
+            {"param":"=ts"},{"break": true},
+            {"break": true},
+            {"param":"=body"},
+            {"break": true},
+            {"break": true},
+            "'''PRIVATE: ",{"param":"=private"},"'''<br>",{"break": true},
+            "'''REAL PERSON: ",{"param":"=realperson"},"'''<br>",{"break": true},
+            "'''NSFW: ",{"param":"=nsfw"},"'''<br>",{"break": true},
+            {"break": true},
+            "'''ACTION (disregarding comments): ",{"param":"act-nocom"},"'''<br>",{"break": true},
+            {"param":"reason-nocom"},{"break": true},
+            {"break": true},
+            "'''ACTION (including comments): ",{"param":"act-com"},"'''<br>",{"break": true},
+            {"param":"reason-com"},{"break": true},
+            {"break": true},
+            "==== FEEDBACK ====",
+            {"break": true},
+            {"break": true}
+        ],
+        "params": [
+            {
+                "name": "act-nocom",
+                "display": "Action (ignoring comments)",
+                "default": "N/A",
+                "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+            },
+            {
+                "name": "reason-nocom",
+                "display": "Reason",
+                "default": "Comments indicate request changed substantially.",
+                "ro-if-udf": ["act-nocom"],
+                "nd-if-def": ["act-nocom"],
+                "multiline": true
+            },
+            {
+                "name": "act-com",
+                "display": "Action (including comments)",
+                "default": "N/A",
+                "nd-if-udf": ["act-nocom"],
+                "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+            },
+            {
+                "name": "reason-com",
+                "display": "Reason",
+                "default": "Action not different.",
+                "ro-if-udf": ["act-com"],
+                "nd-if-def": ["act-com"],
+                "multiline": true
+            }
+        ]
+    }
+}

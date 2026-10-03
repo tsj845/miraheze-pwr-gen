@@ -1,0 +1,24 @@
+__NOTOC__
+__NOEDITSECTION__
+==== Practice Wiki request Review Generator ====
+<div id="person-pwr-gen-content">
+Looks like you havent done the required setup to use the PWR Gen, see [[#setup]].
+</div>
+
+==== About ====
+This is the Miraheze Practice Wiki request Review Generator (PWR Gen for short), made by [[User:Person0192837465]]
+with the goal to remove one of the barriers to entry when becoming a Wiki Request Reviewer (that is, talking to people
+to find out how to do practice reviews).
+
+You can find me on Discord @person0192837465 in the Miraheze Discord server, ping me if you need any support
+or if you have features you want to see!<br>
+This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under <pre>tsj845/miraheze-pwr-gen/tree/website/usrscripts</pre>
+
+==== Setup ====
+Doing the setup up for PWR Gen is super simple! Just add the following to your [[Special:MyPage/common.js]]:
+<pre>
+jQuery(function () {
+    mw.loader.load("/w/index.php?title=User:Person0192837465/pwr/loader.js&action=raw&ctype=text/javascript");
+});
+</pre>
+Once you've done that just reload this page and you're all set!
