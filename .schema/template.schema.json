@@ -17,9 +17,6 @@
                                     {"$ref": "#/$defs/canon-params"},
                                     {"type":"string","not": {"pattern": "^="}}
                                 ]
-                            },
-                            "break": {
-                                "const": true
                             }
                         },
                         "maxProperties": 1,

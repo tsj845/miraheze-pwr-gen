@@ -215,7 +215,6 @@
             if (typeof content === "string") {
                 return content;
             } else {
-                if (content.break) return "\n";
                 if (content.param[0] === "=") {
                     return rwq_data[content.param.slice(1)];
                 }
