@@ -3,7 +3,7 @@
     "default": {
         "template": [
             "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===",{"break": true},
-            "~~~~~",{"break": true},
+            {"param":"=ts"},{"break": true},
             {"break": true},
             {"param":"=body"},
             {"break": true},

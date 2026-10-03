@@ -49,7 +49,7 @@
     "required": ["template","params"],
     "$defs": {
         "canon-params": {
-            "enum": ["=sitename","=pageid","=private","=realperson","=nsfw","=body"]
+            "enum": ["=sitename","=pageid","=private","=realperson","=nsfw","=body","=ts","=sigts","=sig"]
         }
     }
 }

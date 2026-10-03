@@ -8,6 +8,7 @@
      * @name mw
      */
     let mw = window.mw;
+    const $ = document.querySelector.bind(document);
     /**
      * @typedef {import("../stubs.cjs").MSG} MSG
      * @typedef {import("../stubs.cjs").ReqData} ReqData
@@ -63,7 +64,12 @@
                     make("div", {id:"comments-container"})
                 ]}),
                 make("div", {id:"parameters",children:[
-                    make("b", {textContent:"Template Fields"}),make("be")
+                    make("b", {textContent:"Template Fields"}),make("br"),
+                    make("label", {for:"template-select",textContent:"Template: "}),
+                    make("select", {id:"template-select",defaultSelected:"default",children:[
+                        make("option", {value:"default",textContent:"default"})
+                    ]}),
+                    make("div", {id:"params-container"})
                 ]})
             ]})
         ]}),
@@ -79,8 +85,8 @@
     /**@type {TemplateData} */
     let template_data;
     /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
-    const template_map = {};
-    /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[]}|null} */
+    let template_map = {};
+    /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[],ts:string,sig:string,sigts:string}|null} */
     let rwq_data = null;
     /**@type {Record<string,TemplateData>} */
     let templates;
@@ -107,6 +113,7 @@
         const list = [];
         /**@type {((pname:string)=>void)[]} */
         const changeHooks = [];
+        template_map = {};
         for (const param of template_data.params) {
             const ID = list.length;
             const c = document.createElement("div");
@@ -200,7 +207,7 @@
         }
         // push this now so we aren't uselessly calling renderTemplate
         changeHooks.push(renderTemplate);
-        $("#parameters").append(...list);
+        $("#params-container").replaceChildren(...list);
     }
     function renderTemplate() {
         if (rwq_data === null) return;
@@ -229,7 +236,9 @@
         for (const key of ["private","realperson","nsfw"]) {
             rwq_data[key] = ["N","Y"][Number(data[key])];
         }
-        const $ = document.querySelector.bind(document);
+        rwq_data.ts = "~".repeat(5);
+        rwq_data.sig = "~".repeat(3);
+        rwq_data.sigts = "~".repeat(4);
         // populate the wiki request properties
         $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
         $("span#prop-domain").textContent = `Domain: ${data.domain}`;
@@ -271,7 +280,23 @@
                 }
                 templates["default"] = (await req.json())["default"];
             }
+            // $schema is used to get my (and hopefully your) IDE to flag issues with the templates
+            // so it shouldn't be interpreted as a template
+            delete templates["$schema"];
             template_data = templates["default"];
+            /**@type {HTMLSelectElement} */
+            const templsel = document.getElementById("template-select");
+            for (const name in templates) {
+                if (name === "default") continue;
+                templsel.appendChild(make("option", {value:name,textContent:name}));
+            }
+            templsel.onchange = () => {
+                template_data = templates[templsel.value];
+                makeTemplateParams();
+                if (rwq_data !== null) {
+                    renderTemplate();
+                }
+            };
             makeTemplateParams();
             return false;
         };
