@@ -11,7 +11,7 @@ and doing practice reviews).
 
 You can find me on Discord @person0192837465 in the Miraheze Discord server, ping me if you need any support
 or if you have features you want to see!<br>
-This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under <pre>tsj845/miraheze-pwr-gen/tree/website</pre>
+This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under <pre>tsj845/miraheze-pwr-gen/tree/website/usrscripts</pre>
 
 ==== Setup ====
 Doing the setup up for PWR Gen is super simple! Just add the following to your [[Special:MyPage/common.js]]:
