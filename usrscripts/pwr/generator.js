@@ -1,6 +1,6 @@
 {
     /**
-     * @typedef {import("./stubs.cjs").MWCONFIG} MWCONFIG
+     * @typedef {import("../stubs.cjs").MWCONFIG} MWCONFIG
      */
     /**
      * @global
@@ -9,9 +9,9 @@
      */
     let mw = window.mw;
     /**
-     * @typedef {import("./stubs.cjs").MSG} MSG
-     * @typedef {import("./stubs.cjs").ReqData} ReqData
-     * @typedef {import("./stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("../stubs.cjs").MSG} MSG
+     * @typedef {import("../stubs.cjs").ReqData} ReqData
+     * @typedef {import("../stubs.cjs").TemplateData} TemplateData
      */
     // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
@@ -246,10 +246,10 @@
         const getTemplate = async () => {
             let gdef = uname === "Person0192837465";
             let req;
-            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/pwr-template.json`, {method:"GET"});
+            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/pwr/template.json`, {method:"GET"});
             if (req.status === 404) {
                 gdef = true;
-                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr-template.json", {method:"GET"});
+                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr/template.json", {method:"GET"});
             } else if (req.status !== 200) {
                 alert("well that's awkward, the api isn't working, report this to user Person0192837465");
                 return true;
@@ -264,7 +264,7 @@
                     alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
                     return true;
                 }
-                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr-template.json", {method:"GET"});
+                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr/template.json", {method:"GET"});
                 if (req.status !== 200) {
                     alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
                     return true;
