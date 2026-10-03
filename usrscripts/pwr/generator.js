@@ -215,7 +215,6 @@
             if (typeof content === "string") {
                 return content;
             } else {
-                if (content.break) return "\n";
                 if (content.param[0] === "=") {
                     return rwq_data[content.param.slice(1)];
                 }
@@ -236,6 +235,8 @@
         for (const key of ["private","realperson","nsfw"]) {
             rwq_data[key] = ["N","Y"][Number(data[key])];
         }
+        // because we can't have nice things, we have to use canon template parameters and this
+        // dumb hack to avoid expanding the signatures too early
         rwq_data.ts = "~".repeat(5);
         rwq_data.sig = "~".repeat(3);
         rwq_data.sigts = "~".repeat(4);
@@ -255,10 +256,10 @@
         const getTemplate = async () => {
             let gdef = uname === "Person0192837465";
             let req;
-            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/pwr/template.json`, {method:"GET"});
+            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/${PWRPATH}/template.json`, {method:"GET"});
             if (req.status === 404) {
                 gdef = true;
-                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr/template.json", {method:"GET"});
+                req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/${PWRPATH}/template.json`, {method:"GET"});
             } else if (req.status !== 200) {
                 alert("well that's awkward, the api isn't working, report this to user Person0192837465");
                 return true;
@@ -273,7 +274,7 @@
                     alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
                     return true;
                 }
-                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr/template.json", {method:"GET"});
+                req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/${PWRPATH}/template.json`, {method:"GET"});
                 if (req.status !== 200) {
                     alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
                     return true;

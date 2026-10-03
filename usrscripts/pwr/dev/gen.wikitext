@@ -14,9 +14,12 @@ You can find me on Discord @person0192837465 in the Miraheze Discord server, pin
 or if you have features you want to see!<br>
 This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under https://github.com/tsj845/miraheze-pwr-gen/tree/website/usrscripts
 
+You can find the usage guide at [[User:Person0192837465/pwr/guide]].
+
 ==== Setup ====
 Doing the setup up for PWR Gen is super simple! Just add the following to your [[Special:MyPage/common.js]]:
 <pre>
+const PWRPATH = "pwr";
 jQuery(function () {
     mw.loader.load("/w/index.php?title=User:Person0192837465/pwr/loader.js&action=raw&ctype=text/javascript");
 });

@@ -1,0 +1,85 @@
+== Usage ==
+This section covers general usage.
+
+=== Loading a Request ===
+To load a wiki request into the tool, find the request url or id (either one will work).
+Entered the url/id into the box next to the button that says "Populate", then click the button or press Return.
+
+=== Choosing a Template ===
+Under the section titled "Template Fields" there is a dropdown labeled "Template", use this dropdown to choose a template.
+<br>
+See [[#making-a-template|Making a Template]] to find out how to make a template.
+
+
+== Templates ==
+This section covers making and customizing review templates.
+
+=== Changing the Default ===
+The global default template file is [[User:Person0192837465/pwr/template.json]], feel free to shamelessly steal my templates, no attribution necessary.
+
+The default selected template is whatever template is named "default", if your custom template file doesn't have a template named "default", then my default template will be loaded as well and used as the default template.
+
+=== Making a Template ===
+To make a template, create [[Special:MyPage/pwr/template.json]].
+
+The JSON document will be a map from template names to templates, see https://github.com/tsj845/miraheze-pwr-gen/tree/website/.schema/template.schema.json for the schema the templates must follow.
+
+When writing templates you'll need to keep the following in mind:
+* any timestamp or signature must use a canonical parameter to avoid premature substitution.
+
+The template is a list of strings or parameter references, which look like <code>{"param":"parameter name"}</code>.
+
+==== Parameters ====
+There are two types of parameters, canonical and template-defined. Canonical parameters are always available and always have consistent meanings.
+
+The following is a list of all cononical parameters:
+{| class="wikitable"
+|-
+! Parameter !! Description
+|-
+| <code>=pageid</code> || a value that can be used as a link target to the wiki request
+|-
+| <code>=sitename</code> || the requested site name
+|-
+| <code>=domain</code> || the requested wiki url
+|-
+| <code>=requester</code> || the username of the account making the request
+|-
+| <code>=private</code> || "Y" if the request is for a private wiki, "N" otherwise
+|-
+| <code>=realperson</code> || "Y" if the request is for a wiki covering a real person or group, "N" otherwise
+|-
+| <code>=nsfw</code> || "Y" if the request is for a wiki that will have NSFW content, "N" otherwise
+|-
+| <code>=body</code> || the request
+|-
+| <code>=sig</code> || always has a value of three tildes
+|-
+| <code>=sigts</code> || always has a value of four tildes
+|-
+| <code>=ts</code> || always has a value of five tildes
+|}
+
+Template-defined parameters allow you to add custom fields to the template, making it easy to fill out. Template-defined parameters cannot start with <code>=</code>.
+
+The following is a list of all the properties a template-defined parameter definition can have:
+{| class="wikitable"
+|-
+! Property !! Description !! Required
+|-
+| <code>name</code> || the name you will use to invoke this parameter || Yes
+|-
+| <code>default</code> || the default value of this parameter || No
+|-
+| <code>ro-if-udf</code> || a list of parameter names, if all are using their default value this parameter will be forced to use its default value.<br>This will also cause some types of parameters to be hidden. || No
+|-
+| <code>nd-if-udf</code> || a list of parameter names, if any are using their default value this parameter must not be left default || No
+|-
+| <code>nd-if-def</code> || a list of parameter names, if any are not using their default value this parameter must not be left default || No
+|-
+| <code>values</code> || a list of acceptable values excluding any default value, turns this parameter into a dropdown || No
+|-
+| <code>display</code> || the name used to label the field input, defaults to the value of the name field || No
+|-
+| <code>multiline</code> || a boolean, if true then this parameter will accept multiple lines, defaults to false, has no effect if values is also specified || No
+|}
