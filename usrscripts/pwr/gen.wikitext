@@ -8,7 +8,7 @@ Looks like you havent done the required setup to use the PWR Gen, see [[#setup]]
 ==== About ====
 This is the Miraheze Practice Wiki request Review Generator (PWR Gen for short), made by [[User:Person0192837465]]
 with the goal to remove one of the barriers to entry when becoming a Wiki Request Reviewer (that is, talking to people
-and doing practice reviews).
+to find out how to do practice reviews).
 
 You can find me on Discord @person0192837465 in the Miraheze Discord server, ping me if you need any support
 or if you have features you want to see!<br>
