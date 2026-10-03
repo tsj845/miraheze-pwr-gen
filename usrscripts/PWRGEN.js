@@ -41,7 +41,7 @@
         return tag;
     };
     
-    main_content.append(
+    main_content.replaceChildren(
         make("div",{id:"main-content",classList:["populated"],children:[
             make("span", {id:"rwq-container",children:[
                 make("input", {type:"text",id:"rwq-id",onkeyup:(ev)=>{if(ev.code==="Return"||ev.code==="Enter")document.getElementById("populate-button").click();}}),
