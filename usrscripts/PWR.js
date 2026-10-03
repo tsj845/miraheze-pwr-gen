@@ -1,5 +1,14 @@
 {
     /**
+     * @typedef {import("./stubs.cjs").MWCONFIG} MWCONFIG
+     */
+    /**
+     * @global
+     * @type {{config:MWCONFIG}}
+     * @name mw
+     */
+    let mw = window.mw;
+    /**
      * @typedef {import("./stubs.cjs").MSG} MSG
      * @typedef {import("./stubs.cjs").ReqData} ReqData
      */

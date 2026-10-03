@@ -1,7 +1,17 @@
 {
     /**
+     * @typedef {import("./stubs.cjs").MWCONFIG} MWCONFIG
+     */
+    /**
+     * @global
+     * @type {{config:MWCONFIG}}
+     * @name mw
+     */
+    let mw = window.mw;
+    /**
      * @typedef {import("./stubs.cjs").MSG} MSG
      * @typedef {import("./stubs.cjs").ReqData} ReqData
+     * @typedef {import("./stubs.cjs").TemplateData} TemplateData
      */
     // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
@@ -62,27 +72,163 @@
             make("textarea", {readonly:true,id:"output",rows:10,cols:50})
         ]})
     );
+    /**@type {HTMLInputElement} */
     const RWQ_ID = document.getElementById("rwq-id");
+    /**@type {HTMLTextAreaElement} */
+    const OUTPUTWIKITEXT = document.getElementById("output");
+    /**@type {TemplateData} */
+    let template_data;
+    /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
+    const template_map = {};
+    /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[]}|null} */
+    let rwq_data = null;
+    /**@type {Record<string,TemplateData>} */
+    let templates;
+    // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
+    /**
+     * creates a deep copy of an object
+     * @template T
+     * @param {T} obj
+     * @returns {T}
+     */
+    function clone(obj) {
+        if (obj === null || ["string","number","bigint","boolean","function","symbol","undefined"].includes(typeof obj)) {
+            return obj;
+        }
+        if (Array.isArray(obj)) return obj.map(clone);
+        const c = {};
+        for (const key in obj) {
+            c[key] = clone(obj[key]);
+        }
+        return c;
+    }
+    function makeTemplateParams() {
+        /**@type {HTMLElement[]} */
+        const list = [];
+        /**@type {((pname:string)=>void)[]} */
+        const changeHooks = [];
+        for (const param of template_data.params) {
+            const ID = list.length;
+            const c = document.createElement("div");
+            template_map[param.name] = {e:c,v:null};
+            list.push(c);
+            c.classList.add("template-parameter");
+            c.id = `tm-param-${ID}`;
+            const l = document.createElement("label");
+            l.htmlFor = `tm-param-${ID}-in`;
+            l.textContent = `${param.display ?? param.name}: `;
+            c.append(l);
+            /**@type {()=>string} */
+            let getValue;
+            let el;
+            if (param.values) {
+                el = document.createElement("select");
+                getValue = () => {
+                    const ind = Number(el.value);
+                    // catches intended -1 from default and NaN from no selection
+                    if (!(ind >= 0)) return null;
+                    return param.values[ind];
+                }
+                el.id = `tm-param-${ID}-in`;
+                if (param.default) {
+                    const o = document.createElement("option");
+                    o.value = "-1";
+                    o.defaultSelected = true;
+                    o.textContent = param.default;
+                    el.append(o);
+                }
+                el.append(...param.values.map((val, i) => {
+                    const o = document.createElement("option");
+                    o.value = String(i);
+                    o.textContent = val;
+                    return o;
+                }));
+                c.append(el);
+            } else {
+                if (param.multiline) {
+                    el = document.createElement("textarea");
+                    c.append(document.createElement("br"));
+                } else {
+                    el = document.createElement("input");
+                }
+                getValue = () => el.value;
+                el.id = `tm-param-${ID}-in`;
+                c.append(el);
+            }
+            el.onchange = () => {template_map[param.name].v=getValue();changeHooks.forEach(hook => {hook(param.name);});};
+            // some parameters can be hidden depending on the values of others
+            // so this function does that hiding and unhiding
+            changeHooks.push((pname) => {
+                // hide parameters if we can only accept the default value
+                if (param["ro-if-udf"]?.includes(pname)) {
+                    c.hidden = param["ro-if-udf"].some(p => template_map[p].v===null);
+                    template_map[param.name].v = c.hidden ? null : getValue();
+                    // the parameter requiring the default takes precedence
+                    if (c.hidden) return;
+                }
+                // the non default checks only work on parameters with enumerated
+                // values
+                if (param.values && param.default) {
+                    let dis = null;
+                    // if either check passes, we do the same thing
+                    if (param["nd-if-udf"]?.includes(pname)) {
+                        dis = param["nd-if-udf"].some(p => template_map[p].v===null);
+                    } else if (param["nd-if-def"]?.includes(pname)) {
+                        dis = param["nd-if-def"].some(p => template_map[p].v!==null);
+                    }
+                    // using null as a sentinel prevents a bug where
+                    // the default can be re-enabled by another hook
+                    if (dis !== null) {
+                        const s = c.querySelector("select");
+                        s.options.item(0).disabled = dis;
+                        // ensure that the selection is sensible
+                        if (dis) {
+                            if (s.selectedIndex === 0) {
+                                s.selectedIndex = -1;
+                            }
+                        } else if (s.selectedIndex === -1) {
+                            s.selectedIndex = 0;
+                        }
+                    }
+                }
+            });
+        }
+        // pretend we manually inputted all values so that the template doesn't suddenly change
+        // a whole bunch
+        for (const param of template_data.params) {
+            changeHooks.forEach(h => h(param.name));
+        }
+        // push this now so we aren't uselessly calling renderTemplate
+        changeHooks.push(renderTemplate);
+        $("#parameters").append(...list);
+    }
+    function renderTemplate() {
+        if (rwq_data === null) return;
+        OUTPUTWIKITEXT.value = template_data.template.map(content => {
+            if (typeof content === "string") {
+                return content;
+            } else {
+                if (content.break) return "\n";
+                if (content.param[0] === "=") {
+                    return rwq_data[content.param.slice(1)];
+                }
+                // I can't be bothered to do proper support on the render side for
+                // unacceptable values, so it'll happily render templates it really shouldn't
+                return template_map[content.param].v ?? (template_data.params.find(v => v.name === content.param).default ?? "UNDEFINED");
+            }
+        }).join("");
+    }
 
-    document.getElementById("populate-button").onclick = async () => {
+    async function populateTemplate() {
         // the pageid input allows for full or partial urls too, strip that stuff
         const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
-        // scrape the page
-        // const resp = await fetch(`https://${document.location.hostname}/pwr/scrape?id=${pageid}`, {method:"GET"});
-        // // error from the server, oh well
-        // if (resp.status !== 200) {
-        //     alert(`Could not load request data: Error ${resp.status}\n${await resp.text()}`);
-        //     return;
-        // }
-        // /**@type {ReqData} */
-        // const data = await resp.json();
-        // rwq_data = clone(data);
-        // // do transformations to get the right data in rwq_data
-        // rwq_data.pageid = `Special:RequestWikiQueue/${pageid}`;
-        // for (const key of ["private","realperson","nsfw"]) {
-        //     rwq_data[key] = ["N","Y"][Number(data[key])];
-        // }
+        /**@type {ReqData} */
         const data = await scrape(pageid);
+        rwq_data = clone(data);
+        // do transformations to get the right data in rwq_data
+        for (const key of ["private","realperson","nsfw"]) {
+            rwq_data[key] = ["N","Y"][Number(data[key])];
+        }
         const $ = document.querySelector.bind(document);
         // populate the wiki request properties
         $("span#prop-sitename").textContent = `Sitename: ${data.sitename}`;
@@ -93,8 +239,45 @@
         $("pre#prop-body").textContent = data.body;
         $("div#comments-container").replaceChildren(...data.comments.map(makeComment));
         // render the template
-        // renderTemplate();
+        renderTemplate();
     };
+    (async () => {
+        const uname = mw.config.get("wgUserName")??"Person0192837465";
+        const getTemplate = async () => {
+            let gdef = uname === "Person0192837465";
+            let req;
+            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/pwr-template.json`, {method:"GET"});
+            if (req.status === 404) {
+                gdef = true;
+                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr-template.json", {method:"GET"});
+            } else if (req.status !== 200) {
+                alert("well that's awkward, the api isn't working, report this to user Person0192837465");
+                return true;
+            }
+            if (req.status !== 200) {
+                alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
+                return true;
+            }
+            templates = await req.json();
+            if (!("default" in templates)) {
+                if (gdef) {
+                    alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
+                    return true;
+                }
+                req = await fetch("https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/pwr-template.json", {method:"GET"});
+                if (req.status !== 200) {
+                    alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
+                    return true;
+                }
+                templates["default"] = (await req.json())["default"];
+            }
+            template_data = templates["default"];
+            makeTemplateParams();
+            return false;
+        };
+        if (await getTemplate()) return;
+        document.getElementById("populate-button").onclick = populateTemplate;
+    })();
     /**
      * helper function to render a comment
      * @param {{author:string,date:string,body:string}} comment
@@ -118,7 +301,7 @@
 	ifr.sandbox = "allow-scripts allow-same-origin";
 	ifr.style.setProperty("display","none");
 	main_content.append(ifr);
-	ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
+	// ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
     window.addEventListener("message", /**@param {MessageEvent<MSG>} ev*/(ev) => {
         switch (ev.data.type) {
             case "data": {
