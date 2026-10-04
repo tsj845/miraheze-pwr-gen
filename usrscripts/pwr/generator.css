@@ -52,7 +52,7 @@
 pre#prop-body {
     text-wrap: wrap;
     word-wrap: break-word;
-    /* max-height: 40vh; */
+    max-height: 40vh;
     overflow-y: scroll;
 }
 #output {
