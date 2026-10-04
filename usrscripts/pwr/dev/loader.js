@@ -4,7 +4,7 @@ jQuery(function(){
 	if (!title.startsWith("Special:RequestWikiQueue/")) {
 		if (title === `User:Person0192837465/${PWRPATH}/gen`) {
 			mw.loader.load(`/w/index.php?title=User:Person0192837465/${PWRPATH}/generator.js&action=raw&ctype=text/javascript`);
-            mw.loader.load(`/w/index.php?title=User:Person0192837465/${PWRPATH}/generator.css&action=raw&ctype=text/css`, "text/css")
+            mw.loader.load(`/w/index.php?title=User:Person0192837465/${PWRPATH}/generator.css&action=raw&ctype=text/css`, "text/css");
 			return;
 		}
 		console.log(title);
