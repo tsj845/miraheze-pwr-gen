@@ -19,8 +19,8 @@
 	const main_content = document.getElementById("person-pwr-gen-content");
     main_content.setAttribute("data-pwr-state", "select");
 
-    /**@type {Record<string,(data:ReqData)=>void>} */
-    const DATA_REQ_MAP = {};
+    /**@type {{ready:()=>void,data:(data:ReqData)=>void,queue:(data:RListData[])=>void}} */
+    const MSG_WAITERS = {};
 
     /**
      * @param {string} tagname
@@ -125,9 +125,9 @@
     );
     /**@type {HTMLDivElement} */
     const RQL_TABLE = document.getElementById("request-table").querySelector("div.fixed-table-body");
-    for (let i = 0; i < 10; i ++) {
-        RQL_TABLE.append(makeReqListEntry({date:"1/1/2000",requester:"Example",sitename:"Example Wiki",url:"example",source:"Request Queue",id:"00000"}));
-    }
+    // for (let i = 0; i < 10; i ++) {
+    //     RQL_TABLE.append(makeReqListEntry({date:"1/1/2000",requester:"Example",sitename:"Example Wiki",url:"example",source:"Request Queue",id:"00000"}));
+    // }
     /**@type {HTMLDivElement} */
     const REQ_LIST = document.getElementById("request-list");
     /**@type {HTMLInputElement} */
@@ -161,6 +161,7 @@
     function reqListEntryClick(reqid) {
         RWQ_ID.value = reqid;
         main_content.setAttribute("data-pwr-state", "review");
+        populateTemplate();
     }
     // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
     /**
@@ -301,7 +302,7 @@
         // the pageid input allows for full or partial urls too, strip that stuff
         const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
         /**@type {ReqData} */
-        const data = await scrape(pageid);
+        const data = await scrapeRequest(pageid);
         rwq_data = clone(data);
         // do transformations to get the right data in rwq_data
         for (const key of ["private","realperson","nsfw"]) {
@@ -323,6 +324,94 @@
         // render the template
         renderTemplate();
     };
+    /**
+     * helper function to render a comment
+     * @param {{author:string,date:string,body:string}} comment
+     * @returns {HTMLElement}
+     */
+    function makeComment(comment) {
+        const d = document.createElement("div");
+        d.classList.add("comment");
+        const h = document.createElement("b");
+        h.classList.add("comment-header");
+        h.textContent = `${comment.author} at ${comment.date}`;
+        d.append(h);
+        const b = document.createElement("pre");
+        b.classList.add("comment-body");
+        b.textContent = comment.body;
+        d.append(b);
+        return d;
+    }
+
+	const ifr = document.createElement("iframe");
+	ifr.sandbox = "allow-scripts allow-same-origin";
+	ifr.style.setProperty("display","none");
+	main_content.append(ifr);
+    /**
+     * @param {string} src
+     */
+    function setIFRSrc(src) {
+        const url = new URL(src);
+        if (PWRPATH === "pwr/dev") url.searchParams.set("pwrdev", "1");
+        ifr.src = url.toString();
+    }
+	// ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
+    window.addEventListener("message", /**@param {MessageEvent<MSG>} ev*/(ev) => {
+        switch (ev.data.type) {
+            case "data": {
+                //TODO: have a whole bunch of state checking to make sure we don't wipe any partially filled
+                //      template unintentionally
+                MSG_WAITERS.data(ev.data.data);
+                break;
+            }
+            case "queue": {
+                MSG_WAITERS.queue(ev.data.data);
+                break;
+            }
+            case "ready": {
+                if (typeof MSG_WAITERS.ready === "function") {
+                    MSG_WAITERS.ready();
+                    delete MSG_WAITERS["ready"];
+                }
+                break;
+            }
+        }
+    });
+    /**
+     * @param {string} pageid
+     * @returns {Promise<ReqData>}
+     */
+    function scrapeRequest(pageid) {
+        return new Promise(async r => {
+            MSG_WAITERS.data = r;
+            // ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
+            setIFRSrc(`https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`);
+            await new Promise(r2 => {MSG_WAITERS.ready=r2;});
+            ifr.contentWindow.postMessage({type:"send"});
+            // setTimeout(() => {
+            //     ifr.contentDocument.onreadystatechange = () => {
+            //         if (ifr.contentDocument.readyState === "complete") {
+            //             ifr.contentDocument.onreadystatechange = () => {};
+            //         }
+            //     };
+            // }, 1);
+        });
+    }
+    /**
+     * gets the 50 most recent wiki requests with the "In Review" status
+     * @returns {Promise<RListData[]>}
+     */
+    function scrapeQueue() {
+        // 50 most recent requests
+        const uri = "https://meta.miraheze.org/wiki/Special:RequestWikiQueue?sort=cw_timestamp&limit=50&desc=1&status=inreview";
+        return new Promise(async r => {
+            MSG_WAITERS.queue = r;
+            // ifr.src = uri;
+            setIFRSrc(uri);
+            await new Promise(r2 => {MSG_WAITERS.ready=r2;});
+            ifr.contentWindow.postMessage({type:"send"});
+        });
+    }
     (async () => {
         const uname = mw.config.get("wgUserName")??"Person0192837465";
         const getTemplate = async () => {
@@ -374,67 +463,7 @@
             return false;
         };
         if (await getTemplate()) return;
+        RQL_TABLE.replaceChildren(...(await scrapeQueue()).map(v => makeReqListEntry(v)));
         document.getElementById("populate-button").onclick = populateTemplate;
     })();
-    /**
-     * helper function to render a comment
-     * @param {{author:string,date:string,body:string}} comment
-     * @returns {HTMLElement}
-     */
-    function makeComment(comment) {
-        const d = document.createElement("div");
-        d.classList.add("comment");
-        const h = document.createElement("b");
-        h.classList.add("comment-header");
-        h.textContent = `${comment.author} at ${comment.date}`;
-        d.append(h);
-        const b = document.createElement("pre");
-        b.classList.add("comment-body");
-        b.textContent = comment.body;
-        d.append(b);
-        return d;
-    }
-
-	const ifr = document.createElement("iframe");
-	ifr.sandbox = "allow-scripts allow-same-origin";
-	ifr.style.setProperty("display","none");
-	main_content.append(ifr);
-	// ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
-    window.addEventListener("message", /**@param {MessageEvent<MSG>} ev*/(ev) => {
-        switch (ev.data.type) {
-            case "data": {
-                //TODO: have a whole bunch of state checking to make sure we don't wipe any partially filled
-                //      template unintentionally
-                DATA_REQ_MAP[ev.data.id](ev.data.data);
-                break;
-            }
-            case "ready": {
-                if (typeof DATA_REQ_MAP["ready"] === "function") {
-                    DATA_REQ_MAP["ready"]();
-                }
-                break;
-            }
-        }
-    });
-    let dreq_id = 0;
-    /**
-     * @param {string} pageid
-     * @returns {Promise<ReqData>}
-     */
-    function scrape(pageid) {
-        return new Promise(async r => {
-            const id = `dreq-${dreq_id++}`;
-            DATA_REQ_MAP[id] = r;
-            ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
-            await new Promise(r2 => {DATA_REQ_MAP["ready"]=r2;});
-            ifr.contentWindow.postMessage({type:"send",id});
-            // setTimeout(() => {
-            //     ifr.contentDocument.onreadystatechange = () => {
-            //         if (ifr.contentDocument.readyState === "complete") {
-            //             ifr.contentDocument.onreadystatechange = () => {};
-            //         }
-            //     };
-            // }, 1);
-        });
-    }
 }
