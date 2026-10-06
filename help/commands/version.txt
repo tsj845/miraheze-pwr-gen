@@ -1,2 +1,0 @@
-version:
-  display the tool's version and author

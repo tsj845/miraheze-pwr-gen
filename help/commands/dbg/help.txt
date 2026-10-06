@@ -1,9 +1,0 @@
-dbg help [effect]:
-  tools for debugging the help system
-
-Effects:
-  reindex - regenerate the help index, useful when modifying help pages
-
-See Also:
-  use `help dbg` for information about the dbg command
-

@@ -1,3 +1,0 @@
-{@meta}
-@try commands {topics}
-@try &fallback-content

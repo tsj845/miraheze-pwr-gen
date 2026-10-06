@@ -1,5 +1,0 @@
-Linked Parameter Definitions:
-  Linked parameter definitions are done via the 'params.json' file.
-
-  See `ROOT/.schema/params.schema.json` for details.
-
