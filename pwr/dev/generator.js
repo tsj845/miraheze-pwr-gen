@@ -10,7 +10,6 @@
     let mw = window.mw;
     const $ = document.querySelector.bind(document);
     /**
-     * @typedef {import("../stubs.cjs").MSG} MSG
      * @typedef {import("../stubs.cjs").ReqData} ReqData
      * @typedef {import("../stubs.cjs").TemplateData} TemplateData
      * @typedef {import("../stubs.cjs").RListData} RListData
@@ -18,9 +17,6 @@
     // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
     main_content.setAttribute("data-pwr-state", "select");
-
-    /**@type {{ready:()=>void,data:(data:ReqData)=>void,queue:(data:RListData[])=>void}} */
-    const MSG_WAITERS = {};
 
     /**
      * @param {string} tagname
@@ -42,6 +38,19 @@
             tag[k] = options[k];
         }
         return tag;
+    };
+    /**
+     * @param {string} query
+     * @param {string|null} value
+     * @param {Document|HTMLElement} parent
+     * @returns {string}
+     */
+    const select_ = (parent, query, value) => {
+        const result = ([...(parent.querySelector(query)?.childNodes??[])].map(node => node.textContent).map(v => v.trim()).filter(v => v.length).join("\n"))||null;
+        if (result === null) {
+            return value ? null : "DATA NOT FOUND";
+        }
+        return value ? result === value : result;
     };
     
     main_content.replaceChildren(
@@ -144,7 +153,6 @@
         const [src, id] = reqid.split("#");
         csource = src;
         RWQ_ID.value = id;
-        main_content.setAttribute("data-pwr-state", "review");
         if (reqid in review_data) {
             template_data = templates[review_data[reqid].template];
             makeTemplateParams(review_data[reqid].params);
@@ -153,6 +161,7 @@
             // }
         }
         await populateTemplate(src);
+        main_content.setAttribute("data-pwr-state", "review");
     }
     document.getElementById("rwq-discard").onclick = () => {
         makeTemplateParams();
@@ -377,74 +386,78 @@
         return d;
     }
 
-	const ifr = document.createElement("iframe");
-	ifr.sandbox = "allow-scripts allow-same-origin";
-	ifr.style.setProperty("display","none");
-	main_content.append(ifr);
-    /**
-     * @param {string} src
-     */
-    function setIFRSrc(src) {
-        const url = new URL(src);
-        if (PWRPATH === "pwr/dev") url.searchParams.set("pwrdev", "1");
-        ifr.src = url.toString();
-    }
-	// ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
-    window.addEventListener("message", /**@param {MessageEvent<MSG>} ev*/(ev) => {
-        switch (ev.data.type) {
-            case "data": {
-                //TODO: have a whole bunch of state checking to make sure we don't wipe any partially filled
-                //      template unintentionally
-                MSG_WAITERS.data(ev.data.data);
-                break;
-            }
-            case "queue": {
-                MSG_WAITERS.queue(ev.data.data);
-                break;
-            }
-            case "ready": {
-                if (typeof MSG_WAITERS.ready === "function") {
-                    MSG_WAITERS.ready();
-                    delete MSG_WAITERS["ready"];
-                }
-                break;
-            }
-        }
-    });
+    const SCRAPE_SANITIZER = new Sanitizer();
+    SCRAPE_SANITIZER.removeUnsafe();
+    SCRAPE_SANITIZER.allowAttribute("class");
+    SCRAPE_SANITIZER.allowAttribute("id");
+    SCRAPE_SANITIZER.allowElement("fieldset");
+    SCRAPE_SANITIZER.allowElement("form");
+    SCRAPE_SANITIZER.allowElement("label");
     /**
      * @param {string} pageid
      * @returns {Promise<ReqData>}
      */
-    function scrapeRequest(pageid) {
-        return new Promise(async r => {
-            MSG_WAITERS.data = r;
-            // ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
-            setIFRSrc(`https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`);
-            await new Promise(r2 => {MSG_WAITERS.ready=r2;});
-            ifr.contentWindow.postMessage({type:"send"});
-            // setTimeout(() => {
-            //     ifr.contentDocument.onreadystatechange = () => {
-            //         if (ifr.contentDocument.readyState === "complete") {
-            //             ifr.contentDocument.onreadystatechange = () => {};
-            //         }
-            //     };
-            // }, 1);
-        });
+    async function scrapeRequest(pageid) {
+        const url = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
+        const res = await fetch(url, {method:"GET"});
+        if (res.status !== 200) return null;
+        const doc = Document.parseHTML(await res.text(), {sanitizer:SCRAPE_SANITIZER});
+        const select = (query, value) => select_(doc, query, value);
+        /**@type {ReqData} */
+        const data = {
+            "pageid":`Special:RequestWikiQueue/${pageid}`,
+            "sitename":select("label#mw-input-wpsitename"),
+            "domain":select("label#mw-input-wpurl"),
+            "requester":select("label#mw-input-wprequester > a > bdi"),
+            "private":select("label#mw-input-wpprivate > b","Yes"),
+            "realperson":select("label#mw-input-wpbio > b","Yes"),
+            "nsfw":select("label#mw-input-wpnsfw > b","Yes"),
+            "body":select("label#mw-input-wpreason"),
+            "comments": []
+        };
+        const comments = doc.querySelector("fieldset#mw-section-comments");
+        if (comments) {
+            // scrapes comments
+            for (const comment of comments.querySelectorAll("div.oo-ui-fieldLayout-body")) {
+                // the header has the form "Comment by USERNAME at DATE" and the date never contains the word
+                // "at" so we get to not deal with regex, yay
+                const header = comment.querySelector("span.oo-ui-fieldLayout-header > label")?.textContent ?? "by UNDEFINED at NOT FOUND";
+                // the body is super easy
+                const body = ([...(comment.querySelector("div.oo-ui-fieldLayout-field > label")?.childNodes??[])].map(node => node.textContent).map(v => v.trim()).filter(v => v.length).join("\n"))??"NOT FOUND";
+                data.comments.push({
+                    "author": header.slice(header.indexOf("by")+3, header.lastIndexOf("at")-1),
+                    "date": header.slice(header.lastIndexOf("at")+3),
+                    "body": body
+                });
+            }
+        }
+        return data;
     }
     /**
      * gets the 50 most recent wiki requests with the "In Review" status
      * @returns {Promise<RListData[]>}
      */
-    function scrapeQueue() {
+    async function scrapeQueue() {
         // 50 most recent requests
         const uri = "https://meta.miraheze.org/wiki/Special:RequestWikiQueue?sort=cw_timestamp&limit=50&desc=1&status=inreview";
-        return new Promise(async r => {
-            MSG_WAITERS.queue = r;
-            // ifr.src = uri;
-            setIFRSrc(uri);
-            await new Promise(r2 => {MSG_WAITERS.ready=r2;});
-            ifr.contentWindow.postMessage({type:"send"});
+        const res = await fetch(uri, {method:"GET"});
+        if (res.status !== 200) return [];
+        const doc = Document.parseHTML(await res.text(), {sanitizer:SCRAPE_SANITIZER});
+        /**@type {RListData[]} */
+        const data = [];
+        const tablebody = doc.querySelector("table").tBodies[0];
+        tablebody.querySelectorAll("tr").forEach(node => {
+            const select = (query, value) => select_(node, query, value);
+            data.push({
+                date: select(".TablePager_col_cw_timestamp"),
+                requester: select(".TablePager_col_cw_user bdi"),
+                sitename: select(".TablePager_col_cw_sitename"),
+                url: select(".TablePager_col_cw_url").split(".", 1)[0],
+                source: "Request Queue",
+                id: String(node.querySelector(".TablePager_col_cw_status a").href).match(/[0-9]{5,7}/)[0]
+            });
         });
+        return data;
     }
     (async () => {
         const uname = mw.config.get("wgUserName")??"Person0192837465";
