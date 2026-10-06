@@ -13,9 +13,11 @@
      * @typedef {import("../stubs.cjs").MSG} MSG
      * @typedef {import("../stubs.cjs").ReqData} ReqData
      * @typedef {import("../stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("../stubs.cjs").RListData} RListData
      */
     // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
+    main_content.setAttribute("data-pwr-state", "select");
 
     /**@type {Record<string,(data:ReqData)=>void>} */
     const DATA_REQ_MAP = {};
@@ -43,10 +45,53 @@
     };
     
     main_content.replaceChildren(
-        make("div",{id:"main-content",classList:["populated"],children:[
+        make("div", {id:"request-list",children:[
+            make("div", {id:"reqlist-controls",children:[
+                make("label", {for:"rlcontrol-show-old",textContent:"Show Reviewed: "}),
+                make("input", {type:"checkbox",id:"rlcontrol-show-old"}),
+                make("input", {type:"button",value:"Import Practice Requests",id:"rlcontrol-import"})
+            ]}),
+            make("div", {id:"request-table",classList:["fixed-table"],children:[
+                make("div", {classList:["fixed-table-head"],children:[
+                    make("span", {textContent:"Date"}),
+                    make("span", {textContent:"Requester"}),
+                    make("span", {textContent:"Site Name"}),
+                    make("span", {textContent:"URL"}),
+                    make("span", {textContent:"Source"}),
+                    make("span", {textContent:"Actions"})
+                ]}),
+                make("div", {classList:["fixed-table-body"]})
+            ]})
+            // make("div", {classList:["fixed-table"],children:[
+            //     make("table", {id:"request-table",classList:["wikitable"],children:[
+            //         make("thead", {children:[
+            //             make("tr", {children:[
+            //                 make("th", {textContent:"Date"}),
+            //                 make("th", {textContent:"Requester"}),
+            //                 make("th", {textContent:"Site Name"}),
+            //                 make("th", {textContent:"URL"}),
+            //                 make("th", {textContent:"Source"})
+            //             ]})
+            //         ]}),
+            //         make("tbody", {children:[
+            //             make("tr", {children:[
+            //                 make("td", {textContent:"1/1/2000"}),
+            //                 make("td", {textContent:"Example"}),
+            //                 make("td", {textContent:"Example Wiki"}),
+            //                 make("td", {textContent:"example"}),
+            //                 make("td", {textContent:"Request Queue"})
+            //             ]})
+            //         ]})
+            //     ]})
+            // ]})
+        ]}),
+        make("div", {id:"main-content",classList:["populated"],children:[
             make("span", {id:"rwq-container",children:[
-                make("input", {type:"text",id:"rwq-id",onkeyup:(ev)=>{if(ev.code==="Return"||ev.code==="Enter")document.getElementById("populate-button").click();}}),
-                make("input", {type:"button",id:"populate-button",value:"Populate"})
+                make("input", {type:"text",id:"rwq-id",onkeyup:(ev)=>{if(ev.code==="Return"||ev.code==="Enter")document.getElementById("populate-button").click();},hidden:true}),
+                make("input", {type:"button",id:"populate-button",value:"Populate",hidden:true}),
+                make("input", {value:"Discard",type:"button",id:"rwq-discard"}),
+                make("input", {value:"Save Draft",type:"button",id:"rwq-draft"}),
+                make("input", {value:"Save",type:"button",id:"rwq-save"})
             ]}),
             make("div", {id:"prop-comm-cont",children:[
                 make("div", {id:"properties",children:[
@@ -78,6 +123,13 @@
             make("textarea", {readonly:true,id:"output",rows:10,cols:50})
         ]})
     );
+    /**@type {HTMLDivElement} */
+    const RQL_TABLE = document.getElementById("request-table").querySelector("div.fixed-table-body");
+    for (let i = 0; i < 10; i ++) {
+        RQL_TABLE.append(makeReqListEntry({date:"1/1/2000",requester:"Example",sitename:"Example Wiki",url:"example",source:"Request Queue",id:"00000"}));
+    }
+    /**@type {HTMLDivElement} */
+    const REQ_LIST = document.getElementById("request-list");
     /**@type {HTMLInputElement} */
     const RWQ_ID = document.getElementById("rwq-id");
     /**@type {HTMLTextAreaElement} */
@@ -90,6 +142,26 @@
     let rwq_data = null;
     /**@type {Record<string,TemplateData>} */
     let templates;
+    /**
+     * @param {RListData} data
+     * @returns {HTMLElement}
+     */
+    function makeReqListEntry(data) {
+        const props = ["date","requester","sitename","url","source"];
+        return make("div", {classList:["req-list-entry"],children:props.map(
+            k => make("span", {classList:[`req-entry-${k}`],textContent:data[k]})
+        ).concat([make("span", {children:[
+            // make("input", {type:"button",onclick:()=>{reqListEntryClick(data.id)}})
+            make("a", {textContent:"Review",onclick:()=>{reqListEntryClick(data.id)}})
+        ]})])});
+    }
+    /**
+     * @param {string} reqid
+     */
+    function reqListEntryClick(reqid) {
+        RWQ_ID.value = reqid;
+        main_content.setAttribute("data-pwr-state", "review");
+    }
     // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
     /**
      * creates a deep copy of an object
