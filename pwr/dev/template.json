@@ -4,10 +4,10 @@
         "template": [
             "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===\n",
             {"param":"=ts"},"\n",
-            "\n",
+            "<pre>\n",
             {"param":"=body"},
             "\n",
-            "\n",
+            "</pre>\n",
             "'''PRIVATE: ",{"param":"=private"},"'''<br>\n",
             "'''REAL PERSON: ",{"param":"=realperson"},"'''<br>\n",
             "'''NSFW: ",{"param":"=nsfw"},"'''<br>\n",
