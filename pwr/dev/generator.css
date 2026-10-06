@@ -80,6 +80,7 @@ div#request-table.fixed-table {
         scroll-snap-align: start;
         > * {
             border-top-width: 0px !important;
+            overflow-wrap: anywhere;
         }
     }
     .fixed-table-head, .req-list-entry {
