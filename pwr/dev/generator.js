@@ -129,9 +129,10 @@
     /**@type {Record<string,TemplateData>} */
     let templates;
     /**
-     * @type {Record<string,{source:string,id:string,template:string,params:(string|null)[]}>}
+     * @type {Record<string,{pos:number,source:string,id:string,template:string,canon:ReqData,params:(string|null)[]}>}
      */
     const review_data = {};
+    let review_count = 0;
     let csource = "";
     /**
      * @param {RListData} data
@@ -164,26 +165,37 @@
         main_content.setAttribute("data-pwr-state", "review");
     }
     document.getElementById("rwq-discard").onclick = () => {
-        makeTemplateParams();
-        main_content.setAttribute("data-pwr-state", "select");
+        transitionToSelect();
     };
     document.getElementById("rwq-draft").onclick = () => {
         saveDraft();
-        makeTemplateParams();
-        main_content.setAttribute("data-pwr-state", "select");
+        transitionToSelect();
     };
     document.getElementById("rwq-save").onclick = () => {
         saveDraft();
-        makeTemplateParams();
-        main_content.setAttribute("data-pwr-state", "select");
+        transitionToSelect();
     };
     function saveDraft() {
-        review_data[`${csource}#${RWQ_ID.value}`] = {
+        const key = `${csource}#${RWQ_ID.value}`;
+        let pos;
+        if (key in review_data) {
+            pos = review_data[key].pos;
+        } else {
+            pos = review_count ++;
+        }
+        review_data[key] = {
             id: RWQ_ID.value,
             source: csource,
             template: templsel.value,
-            params: template_data.params.map(v => template_map[v.name].v)
+            params: template_data.params.map(v => template_map[v.name].v),
+            canon: clone(rwq_data),
+            pos
         };
+    }
+    function transitionToSelect() {
+        makeTemplateParams();
+        main_content.setAttribute("data-pwr-state", "select");
+        OUTPUTWIKITEXT.value = Object.values(review_data).sort((a, b) => a.pos-b.pos).map(v => renderTemplate(templates[v.template], v.canon, v.params, true)).join("\n\n");
     }
     // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
     /**
@@ -321,24 +333,41 @@
             changeHooks.forEach(h => h(param.name));
         }
         // push this now so we aren't uselessly calling renderTemplate
-        changeHooks.push(renderTemplate);
+        changeHooks.push(() => {renderTemplate();});
         $("#params-container").replaceChildren(...list);
         renderTemplate();
     }
-    function renderTemplate() {
-        if (rwq_data === null) return;
-        OUTPUTWIKITEXT.value = template_data.template.map(content => {
+    /**
+     * @param {TemplateData} template
+     * @param {ReqData} canon_data
+     * @param {Record<string,{v:string|null}>|(string|null)[]} params
+     * @param {boolean} suppress_output
+     * @returns {string}
+     */
+    function renderTemplate(template, canon_data, params, suppress_output) {
+        template = template ?? template_data;
+        canon_data = canon_data ?? rwq_data;
+        params = params ?? template_map;
+        if (canon_data === null) return;
+        if (Array.isArray(params)) {
+            params = Object.fromEntries(params.map((v, i) => [template.params[i].name, {v}]));
+        }
+        const r = template.template.map(content => {
             if (typeof content === "string") {
                 return content;
             } else {
                 if (content.param[0] === "=") {
-                    return rwq_data[content.param.slice(1)];
+                    return canon_data[content.param.slice(1)];
                 }
                 // I can't be bothered to do proper support on the render side for
                 // unacceptable values, so it'll happily render templates it really shouldn't
-                return template_map[content.param].v ?? (template_data.params.find(v => v.name === content.param).default ?? "UNDEFINED");
+                return params[content.param].v ?? (template.params.find(v => v.name === content.param).default ?? "UNDEFINED");
             }
         }).join("");
+        if (!suppress_output) {
+            OUTPUTWIKITEXT.value = r;
+        }
+        return r;
     }
 
     async function populateTemplate() {
