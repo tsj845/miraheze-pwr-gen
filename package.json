@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "node-html-parser": "^9.0.4",
-    "nodemailer": "^10.0.13"
-  }
-}
