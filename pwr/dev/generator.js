@@ -62,28 +62,6 @@
                 ]}),
                 make("div", {classList:["fixed-table-body"]})
             ]})
-            // make("div", {classList:["fixed-table"],children:[
-            //     make("table", {id:"request-table",classList:["wikitable"],children:[
-            //         make("thead", {children:[
-            //             make("tr", {children:[
-            //                 make("th", {textContent:"Date"}),
-            //                 make("th", {textContent:"Requester"}),
-            //                 make("th", {textContent:"Site Name"}),
-            //                 make("th", {textContent:"URL"}),
-            //                 make("th", {textContent:"Source"})
-            //             ]})
-            //         ]}),
-            //         make("tbody", {children:[
-            //             make("tr", {children:[
-            //                 make("td", {textContent:"1/1/2000"}),
-            //                 make("td", {textContent:"Example"}),
-            //                 make("td", {textContent:"Example Wiki"}),
-            //                 make("td", {textContent:"example"}),
-            //                 make("td", {textContent:"Request Queue"})
-            //             ]})
-            //         ]})
-            //     ]})
-            // ]})
         ]}),
         make("div", {id:"main-content",classList:["populated"],children:[
             make("span", {id:"rwq-container",children:[
@@ -123,11 +101,10 @@
             make("textarea", {readonly:true,id:"output",rows:10,cols:50})
         ]})
     );
+    /**@type {HTMLSelectElement} */
+    const templsel = document.getElementById("template-select");
     /**@type {HTMLDivElement} */
     const RQL_TABLE = document.getElementById("request-table").querySelector("div.fixed-table-body");
-    // for (let i = 0; i < 10; i ++) {
-    //     RQL_TABLE.append(makeReqListEntry({date:"1/1/2000",requester:"Example",sitename:"Example Wiki",url:"example",source:"Request Queue",id:"00000"}));
-    // }
     /**@type {HTMLDivElement} */
     const REQ_LIST = document.getElementById("request-list");
     /**@type {HTMLInputElement} */
@@ -143,6 +120,11 @@
     /**@type {Record<string,TemplateData>} */
     let templates;
     /**
+     * @type {Record<string,{source:string,id:string,template:string,params:(string|null)[]}>}
+     */
+    const review_data = {};
+    let csource = "";
+    /**
      * @param {RListData} data
      * @returns {HTMLElement}
      */
@@ -152,16 +134,47 @@
             k => make("span", {classList:[`req-entry-${k}`],textContent:data[k]})
         ).concat([make("span", {children:[
             // make("input", {type:"button",onclick:()=>{reqListEntryClick(data.id)}})
-            make("a", {textContent:"Review",onclick:()=>{reqListEntryClick(data.id)}})
+            make("a", {textContent:"Review",onclick:()=>{reqListEntryClick(`${data.source}#${data.id}`)}})
         ]})])});
     }
     /**
      * @param {string} reqid
      */
-    function reqListEntryClick(reqid) {
-        RWQ_ID.value = reqid;
+    async function reqListEntryClick(reqid) {
+        const [src, id] = reqid.split("#");
+        csource = src;
+        RWQ_ID.value = id;
         main_content.setAttribute("data-pwr-state", "review");
-        populateTemplate();
+        if (reqid in review_data) {
+            template_data = templates[review_data[reqid].template];
+            makeTemplateParams(review_data[reqid].params);
+            // for (let i = 0; i < review_data[reqid].params.length; i ++) {
+            //     document.getElementById("");
+            // }
+        }
+        await populateTemplate(src);
+    }
+    document.getElementById("rwq-discard").onclick = () => {
+        makeTemplateParams();
+        main_content.setAttribute("data-pwr-state", "select");
+    };
+    document.getElementById("rwq-draft").onclick = () => {
+        saveDraft();
+        makeTemplateParams();
+        main_content.setAttribute("data-pwr-state", "select");
+    };
+    document.getElementById("rwq-save").onclick = () => {
+        saveDraft();
+        makeTemplateParams();
+        main_content.setAttribute("data-pwr-state", "select");
+    };
+    function saveDraft() {
+        review_data[`${csource}#${RWQ_ID.value}`] = {
+            id: RWQ_ID.value,
+            source: csource,
+            template: templsel.value,
+            params: template_data.params.map(v => template_map[v.name].v)
+        };
     }
     // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
     /**
@@ -181,12 +194,17 @@
         }
         return c;
     }
-    function makeTemplateParams() {
+    /**
+     * @param {(string|nul)[]} values
+     */
+    function makeTemplateParams(values) {
+        values = values ?? [];
         /**@type {HTMLElement[]} */
         const list = [];
         /**@type {((pname:string)=>void)[]} */
         const changeHooks = [];
         template_map = {};
+        let i = 0;
         for (const param of template_data.params) {
             const ID = list.length;
             const c = document.createElement("div");
@@ -224,6 +242,13 @@
                     return o;
                 }));
                 c.append(el);
+                if (i < values.length) {
+                    const v = values[i];
+                    if (v !== null) {
+                        el.selectedIndex = param.values.indexOf(v)+1;
+                        template_map[param.name] = v;
+                    }
+                }
             } else {
                 if (param.multiline) {
                     el = document.createElement("textarea");
@@ -234,6 +259,13 @@
                 getValue = () => el.value;
                 el.id = `tm-param-${ID}-in`;
                 c.append(el);
+                if (i < values.length) {
+                    const v = values[i];
+                    if (v !== null) {
+                        el.value = v;
+                        template_map[param.name] = v;
+                    }
+                }
             }
             el.onchange = () => {template_map[param.name].v=getValue();changeHooks.forEach(hook => {hook(param.name);});};
             // some parameters can be hidden depending on the values of others
@@ -272,6 +304,7 @@
                     }
                 }
             });
+            i ++;
         }
         // pretend we manually inputted all values so that the template doesn't suddenly change
         // a whole bunch
@@ -281,6 +314,7 @@
         // push this now so we aren't uselessly calling renderTemplate
         changeHooks.push(renderTemplate);
         $("#params-container").replaceChildren(...list);
+        renderTemplate();
     }
     function renderTemplate() {
         if (rwq_data === null) return;
@@ -446,8 +480,6 @@
             // so it shouldn't be interpreted as a template
             delete templates["$schema"];
             template_data = templates["default"];
-            /**@type {HTMLSelectElement} */
-            const templsel = document.getElementById("template-select");
             for (const name in templates) {
                 if (name === "default") continue;
                 templsel.appendChild(make("option", {value:name,textContent:name}));
@@ -455,9 +487,6 @@
             templsel.onchange = () => {
                 template_data = templates[templsel.value];
                 makeTemplateParams();
-                if (rwq_data !== null) {
-                    renderTemplate();
-                }
             };
             makeTemplateParams();
             return false;
