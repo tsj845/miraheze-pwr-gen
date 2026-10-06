@@ -1,0 +1,6 @@
+gen.wikitext
+generator.css
+generator.js
+guide.wikitext
+loader.js
+scraper.js

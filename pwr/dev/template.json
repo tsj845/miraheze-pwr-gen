@@ -1,0 +1,57 @@
+{
+    "$schema": "../../.schema/templates.schema.json",
+    "default": {
+        "template": [
+            "=== [[",{"param":"=pageid"},"|",{"param":"=sitename"},"]] ===\n",
+            {"param":"=ts"},"\n",
+            "\n",
+            {"param":"=body"},
+            "\n",
+            "\n",
+            "'''PRIVATE: ",{"param":"=private"},"'''<br>\n",
+            "'''REAL PERSON: ",{"param":"=realperson"},"'''<br>\n",
+            "'''NSFW: ",{"param":"=nsfw"},"'''<br>\n",
+            "\n",
+            "'''ACTION (disregarding comments): ",{"param":"act-nocom"},"'''<br>\n",
+            {"param":"reason-nocom"},"\n",
+            "\n",
+            "'''ACTION (including comments): ",{"param":"act-com"},"'''<br>\n",
+            {"param":"reason-com"},"\n",
+            "\n",
+            "==== FEEDBACK ====",
+            "\n",
+            "\n"
+        ],
+        "params": [
+            {
+                "name": "act-nocom",
+                "display": "Action (ignoring comments)",
+                "default": "N/A",
+                "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+            },
+            {
+                "name": "reason-nocom",
+                "display": "Reason",
+                "default": "Comments indicate request changed substantially.",
+                "ro-if-udf": ["act-nocom"],
+                "nd-if-def": ["act-nocom"],
+                "multiline": true
+            },
+            {
+                "name": "act-com",
+                "display": "Action (including comments)",
+                "default": "N/A",
+                "nd-if-udf": ["act-nocom"],
+                "values": ["ACCEPT","DENY","INTERROGATE","DEFER","INTERROGATE lean ACCEPT","INTERROGATE lean DENY","DEFER lean ACCEPT","DEFER lean DENY"]
+            },
+            {
+                "name": "reason-com",
+                "display": "Reason",
+                "default": "Action not different.",
+                "ro-if-udf": ["act-com"],
+                "nd-if-def": ["act-com"],
+                "multiline": true
+            }
+        ]
+    }
+}

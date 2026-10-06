@@ -1,3 +1,6 @@
 node_modules
 .cookie
 /wikitext
+settings.json
+pid.txt
+.DS_Store
