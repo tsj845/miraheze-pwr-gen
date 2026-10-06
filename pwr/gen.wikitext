@@ -1,5 +1,4 @@
-__NOTOC__
-__NOEDITSECTION__
+__NOTOC__ __NOEDITSECTION__
 ==== Practice Wiki request Review Generator ====
 <div id="person-pwr-gen-content">
 Looks like you havent done the required setup to use the PWR Gen, see [[#setup]].
@@ -12,7 +11,7 @@ to find out how to do practice reviews).
 
 You can find me on Discord @person0192837465 in the Miraheze Discord server, ping me if you need any support
 or if you have features you want to see!<br>
-This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under https://github.com/tsj845/miraheze-pwr-gen/tree/website/usrscripts
+This tool has a git repository (it's not mirrored, but I keep them up to date with each other). You can find it on GitHub under https://github.com/tsj845/miraheze-pwr-gen/
 
 You can find the usage guide at [[User:Person0192837465/pwr/guide]].
 
