@@ -1,6 +1,6 @@
 {
     /**
-     * @typedef {import("../stubs.cjs").MWCONFIG} MWCONFIG
+     * @typedef {import("./stubs.cjs").MWCONFIG} MWCONFIG
      */
     /**
      * @global
@@ -10,9 +10,9 @@
     let mw = window.mw;
     const $ = document.querySelector.bind(document);
     /**
-     * @typedef {import("../stubs.cjs").ReqData} ReqData
-     * @typedef {import("../stubs.cjs").TemplateData} TemplateData
-     * @typedef {import("../stubs.cjs").RListData} RListData
+     * @typedef {import("./stubs.cjs").ReqData} ReqData
+     * @typedef {import("./stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("./stubs.cjs").RListData} RListData
      */
     // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
