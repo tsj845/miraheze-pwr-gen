@@ -1,0 +1,8 @@
+{
+    "artifact_subpath": "/a/",
+    "default_template": "default",
+    "template_path": "/templates/",
+    "curated_path": "/curated?",
+    "review_page": "/PWR",
+    "rp_position_marker": "@next-review"
+}
