@@ -1,11 +1,7 @@
 {
     /**
-     * @typedef {import("./stubs.cjs").MWCONFIG} MWCONFIG
-     */
-    /**
      * @global
-     * @type {{config:MWCONFIG}}
-     * @name mw
+     * @type {import("./stubs.cjs").MW}
      */
     let mw = window.mw;
     const $ = document.querySelector.bind(document);

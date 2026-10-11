@@ -1,0 +1,58 @@
+This file documents the format of wikitext templates.
+
+Note: any text surrounded by angle brackets ("<>") is a name, not literal text.
+
+The basic structure is template content optionally followed by parameter definitions.
+Content and parameter defintions are separated by a line containing only "{=defs}". It is illegal for
+the value "{=defs}" to appear anywhere else in the template.
+
+Content is wikitext that may contain parameter invocations, which will be substituted
+with the value of the parameter when the template is rendered.
+Parameter invocations are of the form "{<parameter>}", it is illegal for other instances of
+single curly braces to appear in the template content. (Use constant parameters for a workaround).
+
+The parameter definitions section is structured in the following manner:
+```
+[define <type> <parameter>
+ [<prop> <value>]*]*
+```
+That is, zero or more parameter definitions beginning with the text "define <type> <parameter>"
+and followed by zero or more property-value pairs with a space beginning the line.
+
+<parameter> may consist of lowercase ascii alphabetical characters, the numbers 0-9,
+the dash character '-', and the underscore '_'.
+<parameter> must additionally begin with the colon ':' if and only if <type> is "const".
+
+Note: properties with types annotated with '?' are optional.
+Note: properties with types annotated with '[]' may appear multiple times.
+Types:
+    "const" - parameters with constant values
+        Properties:
+        "value" (string) - the value of this parameter
+
+    "text" - arbitrary text
+        Properties:
+        "default" (string?)
+        "display" (string?)
+        "essay"   (boolean?) - default "false", if "true" this parameter accepts multiple lines of text
+        "ro-if-udf" (string[]?)
+        "nd-if-udf" (string[]?)
+        "nd-if-def" (string[]?)
+    
+    "choice" - an enumerated list of options
+        Properties:
+        "default" (string?)
+        "display" (string?)
+        "value"   (string[]) - the options, the value of default should be included
+        "ro-if-udf" (string[]?)
+        "nd-if-udf" (string[]?)
+        "nd-if-def" (string[]?)
+
+The following properties have standard meanings:
+"display" - the value of this property is shown to the user instead of the invocation name
+"default" - the value of this property is used as the default value of this parameter
+"ro-if-udf" - a list of parameters, if all are default then this is default
+"nd-if-udf" - a list of parameters, if any are default then this can't be default
+"nd-if-def" - a list of parameters, if any aren't default then this can't be default
+
+

@@ -1,0 +1,60 @@
+=== [[{=pageid}|{=sitename}]] ===
+{=ts}
+<pre>
+{=body}
+</pre>
+'''PRIVATE: {=private}'''<br>
+'''REAL PERSON: {=realperson}'''<br>
+'''NSFW: {=nsfw}'''<br>
+
+'''ACTION (disregarding comments): {act-nocom}'''<br>
+{reason-nocom}
+
+'''ACTION (including comments): {act-com}'''<br>
+{reason-com}
+
+==== FEEDBACK ====
+
+
+{=defs}
+
+define choice act-nocom
+ display Action (ignoring comments)
+ default N/A
+ values N/A
+ values ACCEPT
+ values DENY
+ values INTERROGATE
+ values DEFER
+ values INTERROGATE lean ACCEPT
+ values INTERROGATE lean DENY
+ values DEFER lean ACCEPT
+ values DEFER lean DENY
+
+define text reason-nocom
+ display Reason
+ default Comments indicate request changed substantially.
+ ro-if-udf act-nocom
+ nd-if-def act-nocom
+ essay true
+
+define choice act-com
+ display Action (including comments)
+ default N/A
+ nd-if-udf act-nocom
+ values N/A
+ values ACCEPT
+ values DENY
+ values INTERROGATE
+ values DEFER
+ values INTERROGATE lean ACCEPT
+ values INTERROGATE lean DENY
+ values DEFER lean ACCEPT
+ values DEFER lean DENY
+
+define text reason-com
+ display Reason
+ default Action not different.
+ ro-if-udf act-com
+ nd-if-def act-com
+ essay true
