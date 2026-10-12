@@ -11,6 +11,8 @@ const PWR = (() => {
      * @typedef {import("./stubs/apiphp.cjs").EditData} EditData
      * @typedef {import("./stubs.cjs").TemplateData} TemplateData
      * @typedef {import("./stubs.cjs").TemplateParamDef} TemplateParamDef
+     * @typedef {import("./stubs.cjs").ScrapeBlueprint} ScrapeBlueprint
+     * @typedef {import("./stubs.cjs").ReqData} ReqData
      */
 
     class PWR {
@@ -112,6 +114,89 @@ const PWR = (() => {
                 sp.delete("token");
                 sp.set("token", mw.user.tokens.get("csrfToken"));
                 return (await fetch(`https://meta.miraheze.org/w/api.php?action=edit&${sp.toString()}`)).status === 200;
+            }
+        };
+        static Scrape = class {
+            /**
+             * @param {Document|HTMLElement} parent
+             * @param {string} query
+             * @param {string|null} value
+             * @returns {string|null}
+             */
+            static #select(parent, query, value) {
+                const result = ([...(parent.querySelector(query)?.childNodes??[])].map(node => node.textContent).map(v => v.trim()).filter(v => v.length).join("\n"))||null;
+                if (result === null) {
+                    return value ? null : "DATA NOT FOUND";
+                }
+                return value ? result === value : result;
+            }
+            /**
+             * does the actual scraping, all other scrape functions are specializations of this one
+             * @param {Document|HTMLElement} doc
+             * @param {ScrapeBlueprint} blueprint
+             * @returns {Record<string,any|null>}
+             */
+            static #scrapeRaw(doc, blueprint) {
+                const ret = {};
+                for (const k in blueprint) {
+                    const spec = blueprint[k];
+                    const trans = spec.transform ?? {type:"gather"};
+                    switch (trans.type) {
+                        // both operate on a single element
+                        case "gather":case "gather-map": {
+                            const g = this.#select(doc, spec.selector);
+                            if (g === null) {
+                                ret[k] = trans.default ?? null;
+                            }
+                            ret[k] = trans.type === "gather" ? g : trans.map[g];
+                            break;
+                        }
+                        case "map-each": {
+                            ret[k] = [...(doc.querySelectorAll(spec.selector)??[])].map(v => this.#scrapeRaw(v, trans.blueprint));
+                            break;
+                        }
+                    }
+                }
+                return ret;
+            }
+            /**
+             * scrapes a wiki request
+             * @param {string} pageid
+             * @returns {Promise<ReqData>}
+             */
+            static async scrapeRequest(pageid) {
+                const doc = await PWR.API.getDocument(`Special:RequestWikiQueue/${pageid}`);
+                if (!doc) throw new Error("request fetch failed");
+                const select = (query, value) => select_(doc, query, value);
+                /**@type {ReqData} */
+                const data = {
+                    "pageid":`Special:RequestWikiQueue/${pageid}`,
+                    "sitename":select("label#mw-input-wpsitename"),
+                    "domain":select("label#mw-input-wpurl"),
+                    "requester":select("label#mw-input-wprequester > a > bdi"),
+                    "private":select("label#mw-input-wpprivate > b","Yes"),
+                    "realperson":select("label#mw-input-wpbio > b","Yes"),
+                    "nsfw":select("label#mw-input-wpnsfw > b","Yes"),
+                    "body":select("label#mw-input-wpreason"),
+                    "comments": []
+                };
+                const comments = doc.querySelector("fieldset#mw-section-comments");
+                if (comments) {
+                    // scrapes comments
+                    for (const comment of comments.querySelectorAll("div.oo-ui-fieldLayout-body")) {
+                        // the header has the form "Comment by USERNAME at DATE" and the date never contains the word
+                        // "at" so we get to not deal with regex, yay
+                        const header = comment.querySelector("span.oo-ui-fieldLayout-header > label")?.textContent ?? "by UNDEFINED at NOT FOUND";
+                        // the body is super easy
+                        const body = ([...(comment.querySelector("div.oo-ui-fieldLayout-field > label")?.childNodes??[])].map(node => node.textContent).map(v => v.trim()).filter(v => v.length).join("\n"))??"NOT FOUND";
+                        data.comments.push({
+                            "author": header.slice(header.indexOf("by")+3, header.lastIndexOf("at")-1),
+                            "date": header.slice(header.lastIndexOf("at")+3),
+                            "body": body
+                        });
+                    }
+                }
+                return data;
             }
         };
         static Template = class {
