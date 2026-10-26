@@ -10,24 +10,42 @@ Under the section titled "Template Fields" there is a dropdown labeled "Template
 <br>
 See [[#making-a-template|Making a Template]] to find out how to make a template.
 
+== Settings==
+Settings for pwr-gen can be found at [[Special:MyPage/pwr/settings.json]].<br>
+A settings page with default settings looks like this:
+<pre>
+{
+    "default_template": "default",
+    "template_path": "/templates/"
+}
+</pre>
+The <code>default_template</code> specifies the name of the default template.<br>
+The <code>template_path</code> specifies the path to your templates.<br>
+
+If no template with the default template name is found, then the global default template is used.
+The same occurrs if no settings page is found.
 
 == Templates ==
 This section covers making and customizing review templates.
 
 === Changing the Default ===
-The global default template file is [[User:Person0192837465/pwr/template.json]], feel free to shamelessly steal my templates, no attribution necessary.
+The global default template is [[User:Person0192837465/pwr/templates/default]], feel free to shamelessly steal my templates, no attribution necessary.
 
-The default selected template is whatever template is named "default", if your custom template file doesn't have a template named "default", then my default template will be loaded as well and used as the default template.
+You can change the default template by editing your [[Special:MyPage/pwr/settings.json|settings page]].
 
 === Making a Template ===
-To make a template, create [[Special:MyPage/pwr/template.json]].
+To make a template, create a subpage of your template path (the default is [[Special:MyPage/pwr/templates/TEMPLATENAME]]).
 
-The JSON document will be a map from template names to templates, see https://github.com/tsj845/miraheze-pwr-gen/tree/website/.schema/template.schema.json for the schema the templates must follow.
+All pages under your template path will appear in the template dropdown, but subpages of templates will not.
+
+For detailed information about the format of template pages, see https://github.com/tsj845/miraheze-pwr-gen/tree/main/spec/templates.txt.
 
 When writing templates you'll need to keep the following in mind:
 * any timestamp or signature must use a canonical parameter to avoid premature substitution.
+* any single pair of curly braces that is not a parameter invocation is illegal in the template content.
 
-The template is a list of strings or parameter references, which look like <code>{"param":"parameter name"}</code>.
+The template consists of two parts. The first is the template content, which is just wikitext with parameter invocations.
+The second is the parameter definitions. These parts are separated by a line containing only <code>{=defs}</code>.
 
 ==== Parameters ====
 There are two types of parameters, canonical and template-defined. Canonical parameters are always available and always have consistent meanings.
@@ -53,33 +71,85 @@ The following is a list of all cononical parameters:
 |-
 | <code>=body</code> || the request
 |-
-| <code>=sig</code> || always has a value of three tildes
+| <code>=sig</code> || always has a value of three tildes (this may change to immediately expanding to your signature)
 |-
-| <code>=sigts</code> || always has a value of four tildes
+| <code>=sigts</code> || always has a value of four tildes (this may change to immediately expanding to your signature and a timestamp)
 |-
-| <code>=ts</code> || always has a value of five tildes
+| <code>=ts</code> || always has a value of five tildes (this may change to immediately expanding to a timestamp)
 |}
 
 Template-defined parameters allow you to add custom fields to the template, making it easy to fill out. Template-defined parameters cannot start with <code>=</code>.
 
-The following is a list of all the properties a template-defined parameter definition can have:
+Parameter definitions look like this:
+<pre>
+define <parameter-type> <parameter-name>
+ <property-name> <property-value>
+ ...
+</pre>
+
+Each parameter type has different allowed properties.
+
+==== Constant Parameters ====
+Constant parameters are template-defined parameters with a value defined in the template rather than by user input, their names must begin with <code>:</code>.<br>
 {| class="wikitable"
 |-
 ! Property !! Description !! Required
 |-
-| <code>name</code> || the name you will use to invoke this parameter || Yes
-|-
-| <code>default</code> || the default value of this parameter || No
-|-
-| <code>ro-if-udf</code> || a list of parameter names, if all are using their default value this parameter will be forced to use its default value.<br>This will also cause some types of parameters to be hidden. || No
-|-
-| <code>nd-if-udf</code> || a list of parameter names, if any are using their default value this parameter must not be left default || No
-|-
-| <code>nd-if-def</code> || a list of parameter names, if any are not using their default value this parameter must not be left default || No
-|-
-| <code>values</code> || a list of acceptable values excluding any default value, turns this parameter into a dropdown || No
-|-
-| <code>display</code> || the name used to label the field input, defaults to the value of the name field || No
-|-
-| <code>multiline</code> || a boolean, if true then this parameter will accept multiple lines, defaults to false, has no effect if values is also specified || No
+| <code>value</code> || the value of this parameter || Yes
 |}
+The primary conceived use of constant parameters is as a workaround for single brackets being illegal in template content.
+
+==== Text Parameters ====
+Text parameters accept text inputs, and can be single or multiline.
+{| class="wikitable"
+|-
+! Property !! Description !! Required
+|-
+| <code>default</code> || see the list of standard meanings || No
+|-
+| <code>display</code> || see the list of standard meanings || No
+|-
+| <code>essay</code> || default "false", if it is "true" then this parameter accepts multiple lines || No
+|-
+| <code>ro-if-udf</code> || see the list of stanard meanings || No
+|-
+| <code>nd-if-udf</code> || see the list of stanard meanings || No
+|-
+| <code>nd-if-def</code> || see the list of stanard meanings || No
+|}
+
+==== Choice Parameters ====
+Choice parameters are dropdowns.
+{| class="wikitable"
+|-
+! Property !! Description !! Required
+|-
+| <code>default</code> || see the list of standard meanings || No
+|-
+| <code>display</code> || see the list of standard meanings || No
+|-
+| <code>value</code> || this can appear multiple times, each instance of the property is an option in the dropdown || Yes
+|-
+| <code>ro-if-udf</code> || see the list of stanard meanings || No
+|-
+| <code>nd-if-udf</code> || see the list of stanard meanings || No
+|-
+| <code>nd-if-def</code> || see the list of stanard meanings || No
+|}
+
+==== Standard Meanings ====
+This is a list of the standard meanings of parameter properties.
+
+; <code>default</code>
+: the default value of this parameter
+; <code>display</code>
+: what this parameter is labelled to the user (defaults to the parameter name)
+; <code>ro-if-udf</code>
+: this property may appear multiple times, each instance is a parameter name, if all parameters are default this parameter is hidden and forced to be its default value
+; <code>nd-if-udf</code>
+: this property may appear multiple times, each instance is a parameter name, if any are default this parameter cannot be its default value
+; <code>nd-if-def</code>
+: this property may appear multiple times, each instance is a parameter name, if any are not default this parameter cannot be its default value
+
+The <code>ro-if-udf</code> parameter takes priority over the <code>nd-if-udf</code> and <code>nd-if-def</code> parameters.
+
