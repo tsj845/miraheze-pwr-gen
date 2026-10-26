@@ -19,10 +19,11 @@ const { MWCONFIG, MWUSER } = require("./stubs/mw.cjs");
  * @typedef {{name:string,type:"const",value:string}} TPConst
  * @typedef {{name:string,type:"text",display?:string,default?:string,multiline?:boolean,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPText
  * @typedef {{name:string,type:"choice",display?:string,default?:string,values:string[],"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPChoice
+ * @typedef {{name:string,type:"checkbox",display?:string,default?:boolean,checked:string,unchecked:string,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPCheckbox
  */
 /**
  * @typedef TemplateParamDef
- * @type {TPConst|TPChoice|TPText}
+ * @type {TPConst|TPChoice|TPText|TPCheckbox}
  * @ type {{name:string,type:"const"|"text"|"choice",display?:string,multiline?:boolean,default?:string,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[],values?:string[]}}
  */
 /**

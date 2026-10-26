@@ -256,7 +256,7 @@ const PWR = (() => {
                      * `e` is the html element containing this parameter's input
                      * `a` is parameter specific data used to restore disabled parameter state
                      * 
-                     * parameters of type `const` only have `v`
+                     * parameters of type `const` only have `v` and `t`
                      * @type {Record<string,{v:string|null,e:HTMLElement,i:number,a:any}}
                      */
                     this.record = {};
@@ -345,6 +345,21 @@ const PWR = (() => {
                                 el = e;
                                 break;
                             }
+                            case "checkbox": {
+                                const e = document.createElement("input");
+                                e.type = "checkbox";
+                                getValue = () => {
+                                    return (e.checked === param.default)?null:e.checked;
+                                };
+                                setState = (state, to) => {};
+                                e.checked = param.default ?? false;
+                                if ((artifact[param.name]??null) !== null) {
+                                    e.checked = artifact[param.name];
+                                    this.record[param.name].v = artifact[param.name];
+                                }
+                                el = e;
+                                break;
+                            }
                         }
                         el.onchange = () => {this.record[param.name].v=getValue();setTimeout(this.onchange??TemplateInstance.#nop,0,this);};
                         /**@type {(pn:string)=>void} */
@@ -382,7 +397,16 @@ const PWR = (() => {
                 #get(param) {
                     if (param[0] === "=") return this.canon[param.slice(1)] ?? null;
                     if (!(param in this.record)) return null;
-                    return this.record[param].v??(this.template.params[this.record[param].i].default??null);
+                    if (!("i" in this.record[param])) return this.record[param].v;
+                    const p = this.template.params[this.record[param].i];
+                    let def = (p.default??null);
+                    if (p.type === "checkbox" && def !== null) {
+                        def = p[p.default?"checked":"unchecked"];
+                    }
+                    if (p.type === "checkbox") {
+                        return (this.record[param].v===true?p.checked:(this.record[param].v===false?p.unchecked:null))??def;
+                    }
+                    return this.record[param].v??def;
                 }
                 /**
                  * renders the template to a string using the input parameters
@@ -455,7 +479,8 @@ const PWR = (() => {
                                     def.multiline = value === "true";
                                     break;
                                 }
-                                case "value":case "default":case "display": {
+                                case "value":case "default":case "display":
+                                case "checked":case "unchecked": {
                                     def[prop] = value;
                                     break;
                                 }
@@ -480,6 +505,10 @@ const PWR = (() => {
                                 if (!Array.isArray(def.values) || (def.default&&!def.values.includes(def.default))) {
                                     throw new Error("bad parameter definition");
                                 }
+                                break;
+                            }
+                            case "checkbox": {
+                                def.default = def.default === "true";
                                 break;
                             }
                             case "text": {

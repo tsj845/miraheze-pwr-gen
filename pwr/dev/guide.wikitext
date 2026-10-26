@@ -123,11 +123,11 @@ Text parameters accept text inputs, and can be single or multiline.
 |-
 | <code>essay</code> || default "false", if it is "true" then this parameter accepts multiple lines || No
 |-
-| <code>ro-if-udf</code> || see the list of stanard meanings || No
+| <code>ro-if-udf</code> || see the list of standard meanings || No
 |-
-| <code>nd-if-udf</code> || see the list of stanard meanings || No
+| <code>nd-if-udf</code> || see the list of standard meanings || No
 |-
-| <code>nd-if-def</code> || see the list of stanard meanings || No
+| <code>nd-if-def</code> || see the list of standard meanings || No
 |}
 
 ==== Choice Parameters ====
@@ -140,13 +140,28 @@ Choice parameters are dropdowns.
 |-
 | <code>display</code> || see the list of standard meanings || No
 |-
-| <code>value</code> || this can appear multiple times, each instance of the property is an option in the dropdown || Yes
+| <code>values</code> || this can appear multiple times, each instance of the property is an option in the dropdown || Yes
 |-
-| <code>ro-if-udf</code> || see the list of stanard meanings || No
+| <code>ro-if-udf</code> || see the list of standard meanings || No
 |-
-| <code>nd-if-udf</code> || see the list of stanard meanings || No
+| <code>nd-if-udf</code> || see the list of standard meanings || No
 |-
-| <code>nd-if-def</code> || see the list of stanard meanings || No
+| <code>nd-if-def</code> || see the list of standard meanings || No
+|}
+
+==== Checkbox Parameters ====
+Checkbox parameters display as a checkbox, and have two possible values.
+{| class="wikitable"
+|-
+! Property !! Description !! Required
+|-
+| <code>default</code> || can be "true" or "false", defaults to "false" || No
+|-
+| <code>display</code> || see the list of standard meanings || No
+|-
+| <code>checked</code> || the value when the checkbox is checked || Yes
+|-
+| <code>unchecked</code> || the value when the checkbox is unchecked || Yes
 |}
 
 ==== Standard Meanings ====
