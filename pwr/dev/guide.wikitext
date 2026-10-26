@@ -89,6 +89,18 @@ define <parameter-type> <parameter-name>
 
 Each parameter type has different allowed properties.
 
+==== Parameter Types ====
+{| class="wikitable"
+|-
+| Constant || <code>const</code>
+|-
+| Text || <code>text</code>
+|-
+| Choice || <code>choice</code>
+|-
+| Checkbox || <code>checkbox</code>
+|}
+
 ==== Constant Parameters ====
 Constant parameters are template-defined parameters with a value defined in the template rather than by user input, their names must begin with <code>:</code>.<br>
 {| class="wikitable"
