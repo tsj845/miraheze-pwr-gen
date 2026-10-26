@@ -3,3 +3,4 @@ generator.css
 generator.js
 guide.wikitext
 loader.js
+utils.js

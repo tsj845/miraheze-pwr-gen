@@ -1,52 +1,48 @@
 {
     /**
-     * @typedef {import("../stubs.cjs").MWCONFIG} MWCONFIG
-     */
-    /**
      * @global
-     * @type {{config:MWCONFIG}}
-     * @name mw
+     * @type {import("./stubs.cjs").MW}
      */
     let mw = window.mw;
     const $ = document.querySelector.bind(document);
     /**
-     * @typedef {import("../stubs.cjs").MSG} MSG
-     * @typedef {import("../stubs.cjs").ReqData} ReqData
-     * @typedef {import("../stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("./stubs.cjs").ReqData} ReqData
+     * @typedef {import("./stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("./stubs.cjs").RListData} RListData
      */
-    // const api = new mw.Api();
 	const main_content = document.getElementById("person-pwr-gen-content");
+    main_content.setAttribute("data-pwr-state", "select");
+    const make = PWR.make;
+    const clone = PWR.clone;
 
-    /**@type {Record<string,(data:ReqData)=>void>} */
-    const DATA_REQ_MAP = {};
-
-    /**
-     * @param {string} tagname
-     * @param {Record<string, any>&{id?:string,classList?:string[],children?:(HTMLElement|string)[],textContent?:string}} options
-     * @returns {HTMLElement}
-     */
-    const make = (tagname, options) => {
-        options = options ?? {};
-        /**@type {HTMLElement} */
-        const tag = document.createElement(tagname);
-        if (options.classList) {
-            tag.classList.add(...options.classList);
-        }
-        if (options.children) {
-            tag.append(...options.children);
-        }
-        for (const k in options) {
-            if (k === "classList" || k === "children") continue;
-            tag[k] = options[k];
-        }
-        return tag;
-    };
+    const DEFAULT_TEMPlATE = PWR.SETTINGS.DEFAULT_TEMPlATE;
     
     main_content.replaceChildren(
-        make("div",{id:"main-content",classList:["populated"],children:[
+        make("div", {id:"request-list",children:[
+            make("div", {id:"reqlist-controls",children:[
+                make("label", {for:"rlcontrol-show-old",textContent:"Show Reviewed: ",hidden:true}),
+                make("input", {type:"checkbox",id:"rlcontrol-show-old",hidden:true}),
+                make("input", {type:"button",value:"Import Practice Requests",id:"rlcontrol-import",hidden:true})
+            ]}),
+            make("div", {id:"request-table",classList:["fixed-table"],children:[
+                make("div", {classList:["fixed-table-head"],children:[
+                    make("span", {textContent:"Date"}),
+                    make("span", {textContent:"Requester"}),
+                    make("span", {textContent:"Site Name"}),
+                    make("span", {textContent:"URL"}),
+                    make("span", {textContent:"Source"}),
+                    make("span", {textContent:"Actions"})
+                ]}),
+                make("div", {classList:["fixed-table-body"]})
+            ]})
+        ]}),
+        make("div", {id:"main-content",classList:["populated"],children:[
             make("span", {id:"rwq-container",children:[
-                make("input", {type:"text",id:"rwq-id",onkeyup:(ev)=>{if(ev.code==="Return"||ev.code==="Enter")document.getElementById("populate-button").click();}}),
-                make("input", {type:"button",id:"populate-button",value:"Populate"})
+                make("input", {type:"text",id:"rwq-id",onkeyup:(ev)=>{if(ev.code==="Return"||ev.code==="Enter")document.getElementById("populate-button").click();},hidden:true}),
+                make("input", {type:"button",id:"populate-button",value:"Populate",hidden:true}),
+                make("input", {value:"Discard",type:"button",id:"rwq-discard"}),
+                make("input", {value:"Save Draft",type:"button",id:"rwq-draft"}),
+                make("input", {value:"Save",type:"button",id:"rwq-save",hidden:true})
             ]}),
             make("div", {id:"prop-comm-cont",children:[
                 make("div", {id:"properties",children:[
@@ -66,8 +62,8 @@
                 make("div", {id:"parameters",children:[
                     make("b", {textContent:"Template Fields"}),make("br"),
                     make("label", {for:"template-select",textContent:"Template: "}),
-                    make("select", {id:"template-select",defaultSelected:"default",children:[
-                        make("option", {value:"default",textContent:"default"})
+                    make("select", {id:"template-select",defaultSelected:DEFAULT_TEMPlATE,children:[
+                        make("option", {value:DEFAULT_TEMPlATE,textContent:DEFAULT_TEMPlATE})
                     ]}),
                     make("div", {id:"params-container"})
                 ]})
@@ -78,158 +74,113 @@
             make("textarea", {readonly:true,id:"output",rows:10,cols:50})
         ]})
     );
+    /**@type {HTMLSelectElement} */
+    const templsel = document.getElementById("template-select");
+    /**@type {HTMLDivElement} */
+    const RQL_TABLE = document.getElementById("request-table").querySelector("div.fixed-table-body");
+    /**@type {HTMLDivElement} */
+    const REQ_LIST = document.getElementById("request-list");
     /**@type {HTMLInputElement} */
     const RWQ_ID = document.getElementById("rwq-id");
     /**@type {HTMLTextAreaElement} */
     const OUTPUTWIKITEXT = document.getElementById("output");
-    /**@type {TemplateData} */
-    let template_data;
-    /**@type {Record<string,{e:HTMLElement,v:string|null}>} */
-    let template_map = {};
     /**@type {{pageid:string,sitename:string,domain:string,requester:string,private:string,realperson:string,nsfw:string,body:string,comments:{author:string,date:string,body:string}[],ts:string,sig:string,sigts:string}|null} */
     let rwq_data = null;
-    /**@type {Record<string,TemplateData>} */
+    /**@type {Record<string,TemplateData|string>} */
     let templates;
-    // needed to fix the bug where a shared object gets corrupted because rwq_data needs a slightly different format
+    /**@type {typeof PWR.Template.TemplateInstance.TYPE} */
+    let template_instance
     /**
-     * creates a deep copy of an object
-     * @template T
-     * @param {T} obj
-     * @returns {T}
+     * @type {Record<string,{pos:number,artifact:Record<string,string|null>,render:string,source:string,id:string,template:string,canon:ReqData,params:(string|null)[]}>}
      */
-    function clone(obj) {
-        if (obj === null || ["string","number","bigint","boolean","function","symbol","undefined"].includes(typeof obj)) {
-            return obj;
-        }
-        if (Array.isArray(obj)) return obj.map(clone);
-        const c = {};
-        for (const key in obj) {
-            c[key] = clone(obj[key]);
-        }
-        return c;
+    const review_data = {};
+    let review_count = 0;
+    let csource = "";
+    /**
+     * @param {RListData} data
+     * @returns {HTMLElement}
+     */
+    function makeReqListEntry(data) {
+        const props = ["date","requester","sitename","url","source"];
+        return make("div", {classList:["req-list-entry"],children:props.map(
+            k => make("span", {classList:[`req-entry-${k}`],textContent:data[k]})
+        ).concat([make("span", {children:[
+            // make("input", {type:"button",onclick:()=>{reqListEntryClick(data.id)}})
+            make("a", {textContent:"Review",onclick:()=>{reqListEntryClick(`${data.source}#${data.id}`)}})
+        ]})])});
     }
-    function makeTemplateParams() {
-        /**@type {HTMLElement[]} */
-        const list = [];
-        /**@type {((pname:string)=>void)[]} */
-        const changeHooks = [];
-        template_map = {};
-        for (const param of template_data.params) {
-            const ID = list.length;
-            const c = document.createElement("div");
-            template_map[param.name] = {e:c,v:null};
-            list.push(c);
-            c.classList.add("template-parameter");
-            c.id = `tm-param-${ID}`;
-            const l = document.createElement("label");
-            l.htmlFor = `tm-param-${ID}-in`;
-            l.textContent = `${param.display ?? param.name}: `;
-            c.append(l);
-            /**@type {()=>string} */
-            let getValue;
-            let el;
-            if (param.values) {
-                el = document.createElement("select");
-                getValue = () => {
-                    const ind = Number(el.value);
-                    // catches intended -1 from default and NaN from no selection
-                    if (!(ind >= 0)) return null;
-                    return param.values[ind];
-                }
-                el.id = `tm-param-${ID}-in`;
-                if (param.default) {
-                    const o = document.createElement("option");
-                    o.value = "-1";
-                    o.defaultSelected = true;
-                    o.textContent = param.default;
-                    el.append(o);
-                }
-                el.append(...param.values.map((val, i) => {
-                    const o = document.createElement("option");
-                    o.value = String(i);
-                    o.textContent = val;
-                    return o;
-                }));
-                c.append(el);
-            } else {
-                if (param.multiline) {
-                    el = document.createElement("textarea");
-                    c.append(document.createElement("br"));
-                } else {
-                    el = document.createElement("input");
-                }
-                getValue = () => el.value;
-                el.id = `tm-param-${ID}-in`;
-                c.append(el);
-            }
-            el.onchange = () => {template_map[param.name].v=getValue();changeHooks.forEach(hook => {hook(param.name);});};
-            // some parameters can be hidden depending on the values of others
-            // so this function does that hiding and unhiding
-            changeHooks.push((pname) => {
-                // hide parameters if we can only accept the default value
-                if (param["ro-if-udf"]?.includes(pname)) {
-                    c.hidden = param["ro-if-udf"].some(p => template_map[p].v===null);
-                    template_map[param.name].v = c.hidden ? null : getValue();
-                    // the parameter requiring the default takes precedence
-                    if (c.hidden) return;
-                }
-                // the non default checks only work on parameters with enumerated
-                // values
-                if (param.values && param.default) {
-                    let dis = null;
-                    // if either check passes, we do the same thing
-                    if (param["nd-if-udf"]?.includes(pname)) {
-                        dis = param["nd-if-udf"].some(p => template_map[p].v===null);
-                    } else if (param["nd-if-def"]?.includes(pname)) {
-                        dis = param["nd-if-def"].some(p => template_map[p].v!==null);
-                    }
-                    // using null as a sentinel prevents a bug where
-                    // the default can be re-enabled by another hook
-                    if (dis !== null) {
-                        const s = c.querySelector("select");
-                        s.options.item(0).disabled = dis;
-                        // ensure that the selection is sensible
-                        if (dis) {
-                            if (s.selectedIndex === 0) {
-                                s.selectedIndex = -1;
-                            }
-                        } else if (s.selectedIndex === -1) {
-                            s.selectedIndex = 0;
-                        }
-                    }
-                }
-            });
+    /**
+     * @param {string} reqid
+     */
+    async function reqListEntryClick(reqid) {
+        const [src, id] = reqid.split("#");
+        csource = src;
+        RWQ_ID.value = id;
+        if (reqid in review_data) {
+            const rd = review_data[reqid];
+            template_instance = PWR.Template.renderParams(templates[rd.template], rd.artifact);
+            await populateTemplate(template_instance.canon, src);
+        } else {
+            await populateTemplate(id, src);
+            template_instance = PWR.Template.renderParams(templates[DEFAULT_TEMPlATE], Object.fromEntries(Object.entries(rwq_data).map(r=>["="+r[0],r[1]])));
         }
-        // pretend we manually inputted all values so that the template doesn't suddenly change
-        // a whole bunch
-        for (const param of template_data.params) {
-            changeHooks.forEach(h => h(param.name));
-        }
-        // push this now so we aren't uselessly calling renderTemplate
-        changeHooks.push(renderTemplate);
-        $("#params-container").replaceChildren(...list);
+        template_instance.attach($("#params-container"));
+        main_content.setAttribute("data-pwr-state", "review");
+        OUTPUTWIKITEXT.value = template_instance.render();
+        template_instance.onchange = (ti) => {
+            OUTPUTWIKITEXT.value = ti.render();
+        };
     }
-    function renderTemplate() {
-        if (rwq_data === null) return;
-        OUTPUTWIKITEXT.value = template_data.template.map(content => {
-            if (typeof content === "string") {
-                return content;
-            } else {
-                if (content.param[0] === "=") {
-                    return rwq_data[content.param.slice(1)];
-                }
-                // I can't be bothered to do proper support on the render side for
-                // unacceptable values, so it'll happily render templates it really shouldn't
-                return template_map[content.param].v ?? (template_data.params.find(v => v.name === content.param).default ?? "UNDEFINED");
-            }
-        }).join("");
+    document.getElementById("rwq-discard").onclick = () => {
+        transitionToSelect();
+    };
+    document.getElementById("rwq-draft").onclick = () => {
+        saveDraft();
+        transitionToSelect();
+    };
+    document.getElementById("rwq-save").onclick = () => {
+        saveDraft();
+        transitionToSelect();
+    };
+    function saveDraft() {
+        const key = `${csource}#${RWQ_ID.value}`;
+        let pos;
+        if (key in review_data) {
+            pos = review_data[key].pos;
+        } else {
+            pos = review_count ++;
+        }
+        const render = template_instance.render();
+        review_data[key] = {
+            id: RWQ_ID.value,
+            artifact: template_instance.artifact(),
+            render,
+            source: csource,
+            template: templsel.value,
+            pos
+        };
+        template_instance = null;
+    }
+    function transitionToSelect() {
+        main_content.setAttribute("data-pwr-state", "select");
+        OUTPUTWIKITEXT.value = Object.values(review_data).sort((a, b) => a.pos-b.pos).map(v => v.render).join("\n\n");
     }
 
-    async function populateTemplate() {
-        // the pageid input allows for full or partial urls too, strip that stuff
-        const pageid = RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value;
+    /**
+     * accepts a request id or request data object as a target
+     * @param {(string|ReqData)?} target source for paramaters
+     * @param {string} src where this request came from
+     */
+    async function populateTemplate(target, src) {
         /**@type {ReqData} */
-        const data = await scrape(pageid);
+        let data;
+        if (typeof target !== "object" || target === null) {
+            // the pageid input allows for full or partial urls too, strip that stuff
+            const pageid = target !== null ? String(target) : (RWQ_ID.value.includes("/") ? RWQ_ID.value.slice(RWQ_ID.value.lastIndexOf("/")+1) : RWQ_ID.value);
+            data = await PWR.Scrape.scrapeRequest(pageid);
+        } else {
+            data = target;
+        }
         rwq_data = clone(data);
         // do transformations to get the right data in rwq_data
         for (const key of ["private","realperson","nsfw"]) {
@@ -248,62 +199,7 @@
         $("span#prop-nsfw").textContent = `NSFW: ${["No","Yes"][Number(data.nsfw)]}`;
         $("pre#prop-body").textContent = data.body;
         $("div#comments-container").replaceChildren(...data.comments.map(makeComment));
-        // render the template
-        renderTemplate();
     };
-    (async () => {
-        const uname = mw.config.get("wgUserName")??"Person0192837465";
-        const getTemplate = async () => {
-            let gdef = uname === "Person0192837465";
-            let req;
-            req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:${uname}/${PWRPATH}/template.json`, {method:"GET"});
-            if (req.status === 404) {
-                gdef = true;
-                req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/${PWRPATH}/template.json`, {method:"GET"});
-            } else if (req.status !== 200) {
-                alert("well that's awkward, the api isn't working, report this to user Person0192837465");
-                return true;
-            }
-            if (req.status !== 200) {
-                alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
-                return true;
-            }
-            templates = await req.json();
-            if (!("default" in templates)) {
-                if (gdef) {
-                    alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
-                    return true;
-                }
-                req = await fetch(`https://meta.miraheze.org/w/index.php?action=raw&ctype=application/javascript&title=User:Person0192837465/${PWRPATH}/template.json`, {method:"GET"});
-                if (req.status !== 200) {
-                    alert("something went wrong, the global default template couldn't be found, report this to user Person0192837465");
-                    return true;
-                }
-                templates["default"] = (await req.json())["default"];
-            }
-            // $schema is used to get my (and hopefully your) IDE to flag issues with the templates
-            // so it shouldn't be interpreted as a template
-            delete templates["$schema"];
-            template_data = templates["default"];
-            /**@type {HTMLSelectElement} */
-            const templsel = document.getElementById("template-select");
-            for (const name in templates) {
-                if (name === "default") continue;
-                templsel.appendChild(make("option", {value:name,textContent:name}));
-            }
-            templsel.onchange = () => {
-                template_data = templates[templsel.value];
-                makeTemplateParams();
-                if (rwq_data !== null) {
-                    renderTemplate();
-                }
-            };
-            makeTemplateParams();
-            return false;
-        };
-        if (await getTemplate()) return;
-        document.getElementById("populate-button").onclick = populateTemplate;
-    })();
     /**
      * helper function to render a comment
      * @param {{author:string,date:string,body:string}} comment
@@ -323,46 +219,28 @@
         return d;
     }
 
-	const ifr = document.createElement("iframe");
-	ifr.sandbox = "allow-scripts allow-same-origin";
-	ifr.style.setProperty("display","none");
-	main_content.append(ifr);
-	// ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/91956`;
-    window.addEventListener("message", /**@param {MessageEvent<MSG>} ev*/(ev) => {
-        switch (ev.data.type) {
-            case "data": {
-                //TODO: have a whole bunch of state checking to make sure we don't wipe any partially filled
-                //      template unintentionally
-                DATA_REQ_MAP[ev.data.id](ev.data.data);
-                break;
-            }
-            case "ready": {
-                if (typeof DATA_REQ_MAP["ready"] === "function") {
-                    DATA_REQ_MAP["ready"]();
-                }
-                break;
-            }
+    (async () => {
+        const uname = mw.config.get("wgUserName")??"Person0192837465";
+        await PWR.SETTINGS.init();
+        templates = await PWR.Template.getUserTemplates();
+        templates[DEFAULT_TEMPlATE] = PWR.Template.parse(await PWR.API.getWikitext(templates[DEFAULT_TEMPlATE]));
+        for (const name in templates) {
+            if (name === "default") continue;
+            templsel.appendChild(make("option", {value:name,textContent:name}));
         }
-    });
-    let dreq_id = 0;
-    /**
-     * @param {string} pageid
-     * @returns {Promise<ReqData>}
-     */
-    function scrape(pageid) {
-        return new Promise(async r => {
-            const id = `dreq-${dreq_id++}`;
-            DATA_REQ_MAP[id] = r;
-            ifr.src = `https://meta.miraheze.org/wiki/Special:RequestWikiQueue/${pageid}`;
-            await new Promise(r2 => {DATA_REQ_MAP["ready"]=r2;});
-            ifr.contentWindow.postMessage({type:"send",id});
-            // setTimeout(() => {
-            //     ifr.contentDocument.onreadystatechange = () => {
-            //         if (ifr.contentDocument.readyState === "complete") {
-            //             ifr.contentDocument.onreadystatechange = () => {};
-            //         }
-            //     };
-            // }, 1);
-        });
-    }
+        templsel.onchange = async () => {
+            const tn = templsel.value;
+            if (typeof templates[tn] === "string") {
+                templates[tn] = PWR.Template.parse(await PWR.API.getWikitext(templates[tn]));
+            }
+            template_instance = PWR.Template.renderParams(templates[tn], template_instance.artifact());
+            template_instance.attach($("#params-container"));
+            template_instance.onchange = (ti) => {
+                OUTPUTWIKITEXT.value = ti.render();
+            };
+            OUTPUTWIKITEXT.value = template_instance.render();
+        };
+        RQL_TABLE.replaceChildren(...(await PWR.Scrape.scrapeQueue()).map(v => makeReqListEntry(v)));
+        document.getElementById("populate-button").onclick = populateTemplate;
+    })();
 }
