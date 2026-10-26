@@ -61,15 +61,9 @@ const { MWCONFIG, MWUSER } = require("./stubs/mw.cjs");
  * @prop {string} rp_position_marker the contents of the comment that tracks where the next batch of reviews should be inserted
  */
 
-/**
- * @typedef ScrapeBlueprint
- * @type {Record<string,{selector:string,transform?:{type:"gather",default?:string}|{type:"gather-map",default?:any,map:Record<string,any>}|{type:"map-each",blueprint:ScrapeBlueprint}}>}
- */
-
 exports.RListData = this.RListData;
 exports.ReqData = this.ReqData;
 exports.MSG = this.MSG;
 exports.TemplateData = this.TemplateData;
 exports.TemplateParamDef = this.TemplateParamDef;
 exports.SETTINGS = this.SETTINGS;
-exports.ScrapeBlueprint = this.ScrapeBlueprint;
