@@ -43,10 +43,17 @@ Types:
         Properties:
         "default" (string?)
         "display" (string?)
-        "value"   (string[]) - the options, the value of default should be included
+        "values"   (string[]) - the options, the value of default should be included
         "ro-if-udf" (string[]?)
         "nd-if-udf" (string[]?)
         "nd-if-def" (string[]?)
+    
+    "checkbox" - an input with two options
+        Properties:
+        "default" (boolean?) - whether the checkbox is checked by default, defaults to false
+        "display" (string?)
+        "checked" (string) - the value when the box is checked
+        "unchecked" (string) - the value when the box is unchecked
 
 The following properties have standard meanings:
 "display" - the value of this property is shown to the user instead of the invocation name
