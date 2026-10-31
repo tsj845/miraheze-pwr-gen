@@ -299,7 +299,7 @@ const PWR = (() => {
          */
         static Artifacts = class {
             /**@type {string} */
-            static #ARTIFACT_PATH = `User:${PWR.SETTINGS.uname}/pwr/a`;
+            static #ARTIFACT_PATH = `User:${mw.config.get("wgUserName")}/pwr/a`;
             /**
              * @param {SrcIdKey} key
              * @returns {string}
@@ -558,7 +558,7 @@ const PWR = (() => {
                     4) replace template invocations with expected format
                     5) filter out all empty strings
                     */
-                    template: ` ${content} `.split(/(?:(?<=[^{])[{](?=[^{]))|(?:(?<=[^}])[}]{1}(?=[^}]))/).map((v,i,a)=>i===0?v.slice(1):(i===a.length-1?v.slice(0,v.length-1):v)).map((v,i)=>i%2?{param:v}:v).filter(v=>typeof v !== "string" || v.length),
+                    template: ` ${content} `.split(/(?:(?<=[^{])[{](?=[a-z0-9_\-=:]))|(?:(?<=[a-z0-9_\-=])[}](?=[^}]))/).map((v,i,a)=>i===0?v.slice(1):(i===a.length-1?v.slice(0,v.length-1):v)).map((v,i)=>i%2?{param:v}:v).filter(v=>typeof v !== "string" || v.length),
                     params: defs.split("\ndefine ").filter(v=>v.length).map(v => v.trim().split("\n").filter(l=>l.length)).map(v => {
                         /**@type {TemplateParamDef} */
                         const def = {
