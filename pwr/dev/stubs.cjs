@@ -62,9 +62,39 @@ const { MWCONFIG, MWUSER } = require("./stubs/mw.cjs");
  * @prop {string} rp_position_marker the contents of the comment that tracks where the next batch of reviews should be inserted
  */
 
+/**
+ * @typedef ReviewStatus
+ * @type {"reviewed"|"ignored"|"inprogress"}
+ */
+
+/**
+ * @typedef ReviewStatusArtifact
+ * @type {object}
+ * @prop {ReviewStatus} status
+ */
+
+/**
+ * @typedef InProgressArtifact
+ * @type {object}
+ * @prop {number} date
+ * @prop {string} template
+ * @prop {Record<string,string?>} artifact
+ */
+
+/**
+ * @typedef SrcIdKey
+ * @type {object}
+ * @prop {string} source request namespace
+ * @prop {string} id request id
+ */
+
 exports.RListData = this.RListData;
 exports.ReqData = this.ReqData;
 exports.MSG = this.MSG;
 exports.TemplateData = this.TemplateData;
 exports.TemplateParamDef = this.TemplateParamDef;
 exports.SETTINGS = this.SETTINGS;
+exports.ReviewStatus = this.ReviewStatus;
+exports.ReviewStatusArtifact = this.ReviewStatusArtifact;
+exports.InProgressArtifact = this.InProgressArtifact;
+exports.SrcIdKey = this.SrcIdKey;

@@ -15,7 +15,75 @@ const PWR = (() => {
      * @typedef {import("./stubs.cjs").TemplateParamDef} TemplateParamDef
      * @typedef {import("./stubs.cjs").ReqData} ReqData
      * @typedef {import("./stubs.cjs").SETTINGS} SETTINGS
+     * @typedef {import("./stubs.cjs").ReviewStatusArtifact} ReviewStatusArtifact
+     * @typedef {import("./stubs.cjs").InProgressArtifact} InProgressArtifact
+     * @typedef {import("./stubs.cjs").SrcIdKey} SrcIdKey
      */
+
+    /**used for internal initialization functions */
+    const initSym = Symbol("init");
+    /**
+     * an artifact record backed by a user subpage, if the `use_artifacts` setting
+     * is not enabled, the record will exist only in memory
+     * @template K key type
+     * @template V value type
+     */
+    class ArtifactRecord {
+        /**@type {Record<string,V>} */
+        #record = {};
+        /**@type {(value:K)=>string} */
+        #transformer;
+        /**@type {string} */
+        #endpoint;
+        /**
+         * @param {string} endpoint page this artifact record exists on
+         * @param {(value:K)=>string} transformer transforms a key object to a string key
+         */
+        constructor(endpoint, transformer) {
+            this.#transformer = transformer;
+            this.#endpoint = endpoint;
+            Object.freeze(this);
+        }
+        async [initSym]() {
+            if (!PWR.SETTINGS.USE_ARTIFACTS) return;
+            this.#record = (await PWR.API.getJSON(this.#endpoint)) ?? {};
+        }
+        /**
+         * checks if a key is in the artifact record
+         * @param {K} key artifact key
+         * @returns {boolean}
+         */
+        has(key) {
+            return this.#transformer(key) in this.#record;
+        }
+        /**
+         * gets an artifact
+         * @param {K} key artifact key
+         * @returns {V?}
+         */
+        get(key) {
+            return this.#record[this.#transformer(key)];
+        }
+        /**
+         * updates an artifact, creating it if necessary
+         * 
+         * may queue a call to {@link ArtifactRecord.sync} or call it directly
+         * depending on user settings
+         * @param {K} key artifact key
+         * @param {V} value artifact
+         * @returns {Promise<void>}
+         */
+        async set(key, value) {
+            this.#record[this.#transformer(key)] = value;
+        }
+        /**
+         * writes the in-memory artifact back to its backing page
+         * @returns {void}
+         */
+        async sync() {
+            if (!PWR.SETTINGS.USE_ARTIFACTS) return;
+        }
+    }
 
     /**
      * the helper function top-level namespace
@@ -224,6 +292,32 @@ const PWR = (() => {
                     });
                 });
                 return data;
+            }
+        };
+        /**
+         * helpers for interacting with review artifacts
+         */
+        static Artifacts = class {
+            /**@type {string} */
+            static #ARTIFACT_PATH = `User:${PWR.SETTINGS.uname}/pwr/a`;
+            /**
+             * @param {SrcIdKey} key
+             * @returns {string}
+             */
+            static #SRCID_TRANSFORMER = (key) => `${key.source}/${key.id}`;
+            /**@readonly @type {ArtifactRecord<SrcIdKey,ReviewStatusArtifact>} */
+            static REVIEW_STATUS = new ArtifactRecord(`${this.#ARTIFACT_PATH}/reviewed.json`, this.#SRCID_TRANSFORMER);
+            /**@readonly @type {ArtifactRecord<SrcIdKey,InProgressArtifact>} */
+            static IN_PROGRESS = new ArtifactRecord(`${this.#ARTIFACT_PATH}/in_progress.json`, this.#SRCID_TRANSFORMER);
+            static {
+                Object.defineProperty(this, "REVIEW_STATUS", {"configurable":false,"writable":false});
+                Object.defineProperty(this, "IN_PROGRESS", {"configurable":false,"writable":false});
+            }
+            static async [initSym]() {
+                await Promise.allSettled([
+                    this.REVIEW_STATUS[initSym](),
+                    this.IN_PROGRESS[initSym]()
+                ]);
             }
         };
         /**
@@ -557,17 +651,18 @@ const PWR = (() => {
         static SETTINGS = class {
             static #initialized = false;
             static uname = mw.config.get("wgUserName");
-            static #artifact_subpath = "/a/";
             static #default_template = "default";
             static #template_path = "/templates/";
             static #curated_path = "/curated/";
             static #review_page = "/PWR";
             static #rp_position_marker = "@next-review";
+            static #use_artifacts = false;
             /**
-             * the subpath under `USER/pwr` that review artifacts are stored in
+             * whether review artifacts are enabled, defaults to false
+             * to prevent unwanted subpages from being created
              * @readonly
              */
-            static get ARTIFACT_SUBPATH() {return this.#artifact_subpath;}
+            static get USE_ARTIFACTS() {return this.#use_artifacts;}
             /**
              * the name of the default template
              * @readonly
@@ -594,13 +689,15 @@ const PWR = (() => {
                 if (this.uname === null) return;
                 /**@type {SETTINGS} */
                 const settings = await PWR.API.getJSON(`User:${this.uname}/pwr/settings.json`);
-                if (settings === null) return;
-                if ("artifact_subpath" in settings) this.#artifact_subpath = settings.artifact_subpath;
-                if ("default_template" in settings) this.#default_template = settings.default_template;
-                if ("template_path" in settings) this.#template_path = settings.template_path;
-                if ("curated_path" in settings) this.#curated_path = settings.curated_path;
-                if ("review_page" in settings) this.#review_page = settings.review_page;
-                if ("rp_position_marker" in settings) this.#rp_position_marker = settings.rp_position_marker;
+                if (settings !== null) {
+                    // if ("use_artifacts" in settings) this.#use_artifacts = settings.use_artifacts;
+                    if ("default_template" in settings) this.#default_template = settings.default_template;
+                    if ("template_path" in settings) this.#template_path = settings.template_path;
+                    if ("curated_path" in settings) this.#curated_path = settings.curated_path;
+                    if ("review_page" in settings) this.#review_page = settings.review_page;
+                    if ("rp_position_marker" in settings) this.#rp_position_marker = settings.rp_position_marker;
+                }
+                // await PWR.Artifacts[initSym]();
             }
         };
         /**@type {import("./stubs/make.cjs").ElementMaker} */
