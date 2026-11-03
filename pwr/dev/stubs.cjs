@@ -8,22 +8,45 @@ const { MWCONFIG, MWUSER } = require("./stubs/mw.cjs");
 /**
  * @typedef {"=sitename"|"=pageid"|"=body"|"=private"|"=realperson"|"=nsfw"} CanonParam
  * @typedef {string} TemplateString
- * @typedef {{"break":true}} TemplateBreak
+ * @typedef {{"cond":[string,string],"content":TemplateContent[]}} TemplateCond
  * @typedef {{"param":string|CanonParam}} TemplateParam
  */
 /**
  * @typedef TemplateContent
- * @type {TemplateString|TemplateBreak|TemplateParam}
+ * @type {TemplateString|TemplateCond|TemplateParam}
  */
 /**
  * @typedef {{name:string,type:"const",value:string}} TPConst
- * @typedef {{name:string,type:"text",display?:string,default?:string,multiline?:boolean,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPText
+ * @typedef {{name:string,type:"text",display?:string,default?:string,essay?:boolean,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPText
  * @typedef {{name:string,type:"choice",display?:string,default?:string,values:string[],"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPChoice
  * @typedef {{name:string,type:"checkbox",display?:string,default?:boolean,checked:string,unchecked:string,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[]}} TPCheckbox
+ * @typedef {{name:string,type:"list",item:string[]}} TPList
  */
+
+/**
+ * @typedef {{type:"item",n:number}} ItemSpecifier
+ * @typedef {{type:"range",s:number,e:number}} RangeSpecifier
+ * @typedef {ItemSpecifier|RangeSpecifier} PrimaryIndirectionSpecifier
+ * @typedef {{target:string,specifiers:[PrimaryIndirectionSpecifier?]}} PropertyIndirection
+ */
+
+/**
+ * @typedef {{name:string,type:"const",value:string|PropertyIndirection}} IPConst
+ * @typedef {{name:string,type:"text",display?:string|PropertyIndirection,default?:string|PropertyIndirection,multiline?:boolean,"ro-if-udf"?:(string|PropertyIndirection)[],"nd-if-udf"?:(string|PropertyIndirection)[],"nd-if-def"?:(string|PropertyIndirection)[]}} IPText
+ * @typedef {{name:string,type:"choice",display?:string|PropertyIndirection,default?:string|PropertyIndirection,values:(string|PropertyIndirection)[],"ro-if-udf"?:(string|PropertyIndirection)[],"nd-if-udf"?:(string|PropertyIndirection)[],"nd-if-def"?:(string|PropertyIndirection)[]}} IPChoice
+ * @typedef {{name:string,type:"checkbox",display?:string|PropertyIndirection,default?:boolean|PropertyIndirection,checked:string|PropertyIndirection,unchecked:string|PropertyIndirection,"ro-if-udf"?:(string|PropertyIndirection)[],"nd-if-udf"?:(string|PropertyIndirection)[],"nd-if-def"?:(string|PropertyIndirection)[]}} IPCheckbox
+ * @typedef {{name:string,type:"list",item:(string|PropertyIndirection)[]}} IPList
+ */
+
+/**
+ * template parameters before indirection is resolved
+ * @typedef IntermediateParamDef
+ * @type {IPConst|IPText|IPChoice|IPCheckbox|IPList}
+ */
+
 /**
  * @typedef TemplateParamDef
- * @type {TPConst|TPChoice|TPText|TPCheckbox}
+ * @type {TPConst|TPChoice|TPText|TPCheckbox|TPList}
  * @ type {{name:string,type:"const"|"text"|"choice",display?:string,multiline?:boolean,default?:string,"ro-if-udf"?:string[],"nd-if-udf"?:string[],"nd-if-def"?:string[],values?:string[]}}
  */
 /**
@@ -88,13 +111,31 @@ const { MWCONFIG, MWUSER } = require("./stubs/mw.cjs");
  * @prop {string} id request id
  */
 
+/**
+ * @typedef PBI
+ * @type {object}
+ * @prop {boolean} required
+ * @prop {"bool"|"str"|"list"} type
+ * @prop {boolean} indirection
+ */
+
+/**
+ * @typedef {Record<string,PBI>} PBIR
+ * @typedef {{const:PBIR,text:PBIR,choice:PBIR,checkbox:PBIR,list:PBIR}} PropBehavior
+ */
+
 exports.RListData = this.RListData;
 exports.ReqData = this.ReqData;
 exports.MSG = this.MSG;
 exports.TemplateData = this.TemplateData;
+exports.TemplateContent = this.TemplateContent;
 exports.TemplateParamDef = this.TemplateParamDef;
+exports.IntermediateParamDef = this.IntermediateParamDef;
 exports.SETTINGS = this.SETTINGS;
 exports.ReviewStatus = this.ReviewStatus;
 exports.ReviewStatusArtifact = this.ReviewStatusArtifact;
 exports.InProgressArtifact = this.InProgressArtifact;
 exports.SrcIdKey = this.SrcIdKey;
+exports.PropBehavior = this.PropBehavior;
+exports.PropertyIndirection = this.PropertyIndirection;
+exports.PrimaryIndirectionSpecifier = this.PrimaryIndirectionSpecifier;

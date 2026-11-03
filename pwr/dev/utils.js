@@ -12,12 +12,17 @@ const PWR = (() => {
      * @typedef {import("./stubs/apiphp.cjs").Revision} Revision
      * @typedef {import("./stubs/apiphp.cjs").EditData} EditData
      * @typedef {import("./stubs.cjs").TemplateData} TemplateData
+     * @typedef {import("./stubs.cjs").TemplateContent} TemplateContent
      * @typedef {import("./stubs.cjs").TemplateParamDef} TemplateParamDef
+     * @typedef {import("./stubs.cjs").IntermediateParamDef} IntermediateParamDef
      * @typedef {import("./stubs.cjs").ReqData} ReqData
      * @typedef {import("./stubs.cjs").SETTINGS} SETTINGS
      * @typedef {import("./stubs.cjs").ReviewStatusArtifact} ReviewStatusArtifact
      * @typedef {import("./stubs.cjs").InProgressArtifact} InProgressArtifact
      * @typedef {import("./stubs.cjs").SrcIdKey} SrcIdKey
+     * @typedef {import("./stubs.cjs").PropBehavior} PropBehavior
+     * @typedef {import("./stubs.cjs").PropertyIndirection} PropertyIndirection
+     * @typedef {import("./stubs.cjs").PrimaryIndirectionSpecifier} PrimaryIndirectionSpecifier
      */
 
     /**used for internal initialization functions */
@@ -365,6 +370,9 @@ const PWR = (() => {
                             this.record[param.name] = {v:param.value};
                             continue;
                         }
+                        if (param.type === "list") {
+                            continue;
+                        }
                         const ID = this.elems.length;
                         const c = document.createElement("div");
                         this.elems.push(c);
@@ -383,8 +391,8 @@ const PWR = (() => {
                         let el;
                         switch (param.type) {
                             case "text": {
-                                const e = param.multiline ? document.createElement("textarea") : document.createElement("input");
-                                if (param.multiline) {
+                                const e = param.essay ? document.createElement("textarea") : document.createElement("input");
+                                if (param.essay) {
                                     c.append(document.createElement("br"));
                                 }
                                 getValue = () => {
@@ -507,10 +515,22 @@ const PWR = (() => {
                  * @returns {string}
                  */
                 render() {
-                    return this.template.template.map(content => {
+                    /**
+                     * @param {TemplateContent} content
+                     * @returns {string}
+                     */
+                    const mapper = (content) => {
                         if (typeof content === "string") return content;
+                        if ("cond" in content) {
+                            // recursively evaluates nested conditionals
+                            if (this.#get(content.cond[0]) === this.#get(content.cond[1])) {
+                                return content.content.map(mapper).join("");
+                            }
+                            return "";
+                        }
                         return this.#get(content.param) ?? `**PARAM '${content.param}' UNDEFINED**`;
-                    }).join("");
+                    }
+                    return this.template.template.map(mapper).join("");
                 }
                 /**
                  * returns a parameter artifact that takes ownership of the data
@@ -547,74 +567,325 @@ const PWR = (() => {
              * @returns {TemplateData}
              */
             static parse(wikitext) {
+                // common properties that are really standard
+                const _state_props = {
+                    "ro-if-udf": {"type":"list","required":false,"indirection":true},
+                    "nd-if-udf": {"type":"list","required":false,"indirection":true},
+                    "nd-if-def": {"type":"list","required":false,"indirection":true}
+                };
+                /**
+                 * property specification for each type of parameter
+                 * @type {PropBehavior} */
+                const BEHAVIOR = {
+                    "const": {
+                        "value": {"type":"str","required":true,"indirection":true}
+                    },
+                    "text": {
+                        "default": {"type":"str","required":false,"indirection":true},
+                        "display": {"type":"str","required":false,"indirection":true},
+                        "essay": {"type":"bool","required":false,"indirection":false},
+                        ..._state_props
+                    },
+                    "choice": {
+                        "default": {"type":"str","required":false,"indirection":true},
+                        "display": {"type":"str","required":false,"indirection":true},
+                        "values": {"type":"list","required":true,"indirection":true},
+                        ..._state_props
+                    },
+                    "checkbox": {
+                        "default": {"type":"bool","required":false,"indirection":true},
+                        "display": {"type":"str","required":false,"indirection":true},
+                        "checked": {"type":"str","required":true,"indirection":true},
+                        "unchecked": {"type":"str","required":true,"indirection":true},
+                        ..._state_props
+                    },
+                    "list": {
+                        "item": {"type":"list","required":true,"indirection":true}
+                    }
+                };
                 const [content, defs] = wikitext.split("\n{=defs}\n");
+                /**@type {TemplateContent[][]} */
+                let condStack = [[]];
+                // parses conditionals
+                content.split(/(?:^[{](?=\?))|(?:(?<=[!\]])[}]$)/m).forEach((v, i) => {
+                    if (i & 1) {
+                        if (v === "?!") {
+                            if (condStack.length === 1) {
+                                throw new Error("unmatched conditional statements");
+                            }
+                            // the previous array's final element is the conditional that we
+                            // just finished gathering content for
+                            const s = condStack[condStack.length-2];
+                            s[s.length-1].content = condStack.pop();
+                        } else {
+                            condStack[condStack.length-1].push({"cond":[v.slice(2,v.indexOf('(')),v.slice(v.indexOf('(')+1,v.length-2)]});
+                            condStack.push([]);
+                        }
+                    } else {
+                        // when conditionals are the first or last content, or multiple conditionals
+                        // are adjacent, they create a zero-length string between them that shouldn't be
+                        // included
+                        if (v.length) {
+                            // strips out the newline that conditional statements create
+                            // this ensures that an extra space doesn't appear around conditional
+                            // content
+                            v = v.slice(v[0]==='\n'?1:0);
+                            if (v.length) {
+                                condStack[condStack.length-1].push(v);
+                            }
+                        }
+                    }
+                });
+                if (condStack.length !== 1) {
+                    throw new Error("unmatched conditional statements");
+                }
+                /**
+                 * @param {TemplateContent} item
+                 * @returns {TemplateContent[]|TemplateContent}
+                 */
+                const paramParser = (item) => {
+                    if (typeof item === "string") {
+                        // we add spaces because the regex looks for {} surrounded by non-brace characters
+                        // so if a parameter invocation is the first or last thing in a template
+                        // the regex would fail to recognize it without these spaces
+                        return ` ${item} `.split(/(?:(?<=[^{])[{](?=[a-zA-Z0-9_\-=:]))|(?:(?<=[a-zA-Z0-9_\-=])[}](?=[^}]))/).map((v,i,a)=>
+                            // there were no parameter invocations here, remove spaces from both ends
+                            a.length===1?v.slice(1,v.length-1)
+                            // this is the first item, remove the leading space we added
+                            :i===0?v.slice(1)
+                            // this is the last item, remove the trailing space we added
+                            :i===a.length-1?v.slice(0,v.length-1)
+                            // this isn't the first or last item, don't strip anything
+                            :v
+                        ).map((v,i)=>
+                            // this is a parameter, wrap it
+                            i%2?{param:v}
+                            // not a parameter, leave it alone
+                            :v
+                        ).filter(
+                            // filter out all the empty strings since they aren't needed
+                            v=>typeof v !== "string" || v.length
+                        );
+                    } else {
+                        if ("cond" in item) {
+                            // parse the inside of the conditional recursively
+                            item.content = item.content.flatMap(paramParser);
+                            return item;
+                        }
+                        // should be unreachable unless we somehow revisit already parsed
+                        // content
+                        throw new Error("unknown template content");
+                    }
+                };
                 /**@type {TemplateData} */
                 const data = {
-                    /*
-                    how this works:
-                    1) add a space to the start and end of content, this is done to solve an edge case where the template starts or ends with a parameter invocation
-                    2) split on '{' preceded and followed by non '{' characters and the same for '}'
-                    3) remove the added spaces from the ends of content
-                    4) replace template invocations with expected format
-                    5) filter out all empty strings
-                    */
-                    template: ` ${content} `.split(/(?:(?<=[^{])[{](?=[a-z0-9_\-=:]))|(?:(?<=[a-z0-9_\-=])[}](?=[^}]))/).map((v,i,a)=>i===0?v.slice(1):(i===a.length-1?v.slice(0,v.length-1):v)).map((v,i)=>i%2?{param:v}:v).filter(v=>typeof v !== "string" || v.length),
-                    params: defs.split("\ndefine ").filter(v=>v.length).map(v => v.trim().split("\n").filter(l=>l.length)).map(v => {
-                        /**@type {TemplateParamDef} */
-                        const def = {
-                            name: v[0].slice(v[0].indexOf(" ")+1),
-                            type: v[0].slice(0, v[0].indexOf(" "))
-                        };
-                        v.slice(1).forEach(l => {
-                            const prop = l.slice(1, l.indexOf(" ", 1));
-                            const value = l.slice(l.indexOf(" ", 1)+1);
-                            switch (prop) {
-                                case "essay": {
-                                    def.multiline = value === "true";
+                    template: condStack[0].flatMap(paramParser),
+                    // implicit parameters
+                    params: [
+                        {"type":"const","name":":TRUE","value":"true"},
+                        {"type":"const","name":":FALSE","value":"false"}
+                    ]
+                };
+                /**@type {Record<string, TemplateParamDef>} */
+                const intermediateValues = Object.fromEntries(data.params.map(v=>[v.name,v]));
+                /**
+                 * @param {string} sp
+                 * @returns {PrimaryIndirectionSpecifier}
+                 */
+                const parseSpecifier = (sp) => {
+                    /**@type {PrimaryIndirectionSpecifier} */
+                    const ispec = {
+                        // this works for all specifiers (for now at least)
+                        type: sp.slice(0,sp.indexOf("("))
+                    };
+                    switch (ispec.type) {
+                        case "item": {
+                            // subtract one from the index because the spec has lists
+                            // be 1-indexed
+                            ispec.n = Number(sp.slice(sp.indexOf("(")+1,sp.indexOf(")")))-1;
+                            break;
+                        }
+                        case "range": {
+                            // same as for item's n parameter
+                            ispec.s = Number(sp.slice(sp.indexOf("(")+1,sp.indexOf(".")))-1;
+                            // don't subtract one here even though lists are 1-indexed, because
+                            // range is actually inclusive
+                            ispec.e = Number(sp.slice(sp.lastIndexOf(".")+1,sp.indexOf(")")));
+                            break;
+                        }
+                        default: {
+                            throw new Error("invalid indirection specifier");
+                        }
+                    }
+                    return ispec;
+                };
+                // parses parameter definitions and resolves intermediate representations
+                defs.split("\ndefine ").filter(v=>v.length).map(v => v.trim().split("\n").filter(l=>l.length)).forEach(v => {
+                    /**@type {IntermediateParamDef} */
+                    const def = {
+                        name: v[0].slice(v[0].indexOf(" ")+1),
+                        type: v[0].slice(0, v[0].indexOf(" "))
+                    };
+                    let failed = false;
+                    v.slice(1).forEach(l => {
+                        const prop = l.slice(1, l.indexOf(" ", 1));
+                        const value = l.slice(l.indexOf(" ", 1)+1);
+                        const behavior = prop[0] === '[' ? BEHAVIOR[def.type][prop.slice(1,prop.length-1)] : BEHAVIOR[def.type][prop];
+                        // currently, unrecognized parameters are just silently dropped
+                        if (!behavior) return;
+                        // these branches do almost the same thing, but just different enough
+                        // that there's no way to merge them
+                        if (prop[0] === '[') {
+                            if (!behavior.indirection) {failed=true;return;}
+                            const key = prop.slice(1, prop.length-1);
+                            const specifiers = value.split(" ");
+                            const target = specifiers.shift();
+                            if (!(target in intermediateValues)) {failed=true;return;}
+                            switch (behavior.type) {
+                                case "bool":
+                                case "str": {
+                                    def[key] = {target,specifiers:specifiers.map(parseSpecifier)};
                                     break;
                                 }
-                                case "value":case "default":case "display":
-                                case "checked":case "unchecked": {
+                                case "list": {
+                                    if (!(key in def)) {
+                                        def[key] = [];
+                                    }
+                                    def[key].push({target,specifiers:specifiers.map(parseSpecifier)});
+                                    break;
+                                }
+                            }
+                        } else {
+                            switch (behavior.type) {
+                                case "bool":
+                                case "str": {
                                     def[prop] = value;
                                     break;
                                 }
-                                default: {
-                                    if (prop in def) {
-                                        def[prop].push(value);
+                                case "list": {
+                                    if (!(prop in def)) {
+                                        def[prop] = [];
+                                    }
+                                    def[prop].push(value);
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    const b = BEHAVIOR[def.type];
+                    /**
+                     * @param {PropertyIndirection} ind
+                     * @returns {string|string[]}
+                     */
+                    const resolveIndirection = (ind) => {
+                        if (!(ind.target in intermediateValues)) {
+                            failed = true;
+                            return;
+                        }
+                        let val = intermediateValues[ind.target];
+                        if (ind.specifiers.length) {
+                            const prs = ind.specifiers[0];
+                            switch (prs.type) {
+                                case "item":case "range": {
+                                    if (val.type !== "list") {
+                                        failed = true;
+                                        return;
+                                    }
+                                    if (prs.type === "item") {
+                                        val = val.item[prs.n];
                                     } else {
-                                        def[prop] = [value];
+                                        val = val.item.slice(prs.s, prs.e);
                                     }
                                     break;
                                 }
                             }
-                        });
-                        switch (def.type) {
-                            case "const": {
-                                if (Object.keys(def).length !== 3 || !("value" in def)) {
-                                    throw new Error("bad parameter definition");
+                        } else {
+                            switch (val.type) {
+                                case "const": {
+                                    val = val.value;
+                                    break;
                                 }
-                                break;
-                            }
-                            case "choice": {
-                                if (!Array.isArray(def.values) || (def.default&&!def.values.includes(def.default))) {
-                                    throw new Error("bad parameter definition");
+                                case "list": {
+                                    val = val.item;
+                                    break;
                                 }
-                                break;
-                            }
-                            case "checkbox": {
-                                def.default = def.default === "true";
-                                break;
-                            }
-                            case "text": {
-                                break;
-                            }
-                            default: {
-                                throw new Error("bad parameter type");
+                                default: {
+                                    failed = true;
+                                    return;
+                                }
                             }
                         }
-                        return def;
-                    })
-                };
+                        return val;
+                    };
+                    outer: for (const prop in b) {
+                        const pb = b[prop];
+                        if (!(prop in def)) continue;
+                        if (pb.indirection) {
+                            switch (pb.type) {
+                                case "bool":
+                                case "str": {
+                                    if (typeof def[prop] === "object") {
+                                        const val = resolveIndirection(def[prop]);
+                                        if (typeof val !== "string") {
+                                            failed = true;
+                                            break outer;
+                                        }
+                                        def[prop] = val;
+                                    }
+                                    break;
+                                }
+                                case "list": {
+                                    def[prop] = def[prop].flatMap(v => {
+                                        if (typeof v === "object") {
+                                            return resolveIndirection(v);
+                                        }
+                                        return v;
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                        // the boolean transformation happens last so that indirections
+                        // are fully transparent to it
+                        if (pb.type === "bool") {
+                            def[prop] = def[prop] === "true";
+                        }
+                    }
+                    if (failed) {
+                        throw new Error("property indirection failure");
+                    }
+                    // final validity checks
+                    switch (def.type) {
+                        case "const": {
+                            if (Object.keys(def).length !== 3 || !("value" in def)) {
+                                throw new Error("bad parameter definition");
+                            }
+                            break;
+                        }
+                        case "choice": {
+                            if (!Array.isArray(def.values) || (def.default&&!def.values.includes(def.default))) {
+                                throw new Error("bad parameter definition");
+                            }
+                            break;
+                        }
+                        case "checkbox": {
+                            def.default = def.default === "true";
+                            break;
+                        }
+                        case "text": {
+                            break;
+                        }
+                        case "list": {
+                            break;
+                        }
+                        default: {
+                            throw new Error("bad parameter type");
+                        }
+                    }
+                    if (failed) return;
+                    data.params.push(def);
+                    intermediateValues[def.name] = def;
+                });
                 return data;
             }
             /**

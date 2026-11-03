@@ -8,8 +8,8 @@ the value "{=defs}" to appear anywhere else in the template.
 
 Content is wikitext that may contain parameter invocations, which will be substituted
 with the value of the parameter when the template is rendered.
-Parameter invocations are of the form "{<parameter>}", it is illegal for other instances of
-single curly braces to appear in the template content. (Use constant parameters for a workaround).
+Parameter invocations are of the form "{<parameter>}", single brackets containing characters that are
+invalid for parameter content will be treated as literal text.
 
 The parameter definitions section is structured in the following manner:
 ```
@@ -22,38 +22,45 @@ and followed by zero or more property-value pairs with a space beginning the lin
 <parameter> may consist of lowercase ascii alphabetical characters, the numbers 0-9,
 the dash character '-', and the underscore '_'.
 <parameter> must additionally begin with the colon ':' if and only if <type> is "const".
+constant parameters may also include uppercase ascii alphabetical characters.
+<parameter> must additionally begin with the star '*' if and only if <type> is "list".
 
 Note: properties with types annotated with '?' are optional.
 Note: properties with types annotated with '[]' may appear multiple times.
+Note: properties with types annotated with '*' support indirection.
 Types:
     "const" - parameters with constant values
         Properties:
-        "value" (string) - the value of this parameter
+        "value" (string*) - the value of this parameter
 
     "text" - arbitrary text
         Properties:
-        "default" (string?)
-        "display" (string?)
+        "default" (string?*)
+        "display" (string?*)
         "essay"   (boolean?) - default "false", if "true" this parameter accepts multiple lines of text
-        "ro-if-udf" (string[]?)
-        "nd-if-udf" (string[]?)
-        "nd-if-def" (string[]?)
+        "ro-if-udf" (string[]?*)
+        "nd-if-udf" (string[]?*)
+        "nd-if-def" (string[]?*)
     
     "choice" - an enumerated list of options
         Properties:
-        "default" (string?)
-        "display" (string?)
-        "values"   (string[]) - the options, the value of default should be included
-        "ro-if-udf" (string[]?)
-        "nd-if-udf" (string[]?)
-        "nd-if-def" (string[]?)
+        "default" (string?*)
+        "display" (string?*)
+        "values"   (string[]*) - the options, the value of default should be included
+        "ro-if-udf" (string[]?*)
+        "nd-if-udf" (string[]?*)
+        "nd-if-def" (string[]?*)
     
     "checkbox" - an input with two options
         Properties:
-        "default" (boolean?) - whether the checkbox is checked by default, defaults to false
-        "display" (string?)
-        "checked" (string) - the value when the box is checked
-        "unchecked" (string) - the value when the box is unchecked
+        "default" (boolean?*) - whether the checkbox is checked by default, defaults to false
+        "display" (string?*)
+        "checked" (string*) - the value when the box is checked
+        "unchecked" (string*) - the value when the box is unchecked
+    
+    "list" - similar to "const", but allows lists of values to be specified
+        Properites:
+        "item" (string[]*) - an item in the list, if the item is an indirected list, the indirection includes all items
 
 The following properties have standard meanings:
 "display" - the value of this property is shown to the user instead of the invocation name
@@ -62,4 +69,48 @@ The following properties have standard meanings:
 "nd-if-udf" - a list of parameters, if any are default then this can't be default
 "nd-if-def" - a list of parameters, if any aren't default then this can't be default
 
+Indirection:
+    Properties that support indirection can be surrounded by square brackets ('[]'), doing so
+    marks that instance as an indirected property.
+    Indirected properties allow for values to be defined once and reused elsewhere.
+    The value of an indirected property is a string naming the parameter that holds the value, 
+    the parameter may be followed by additional specifiers.
+
+    Indirections are resolved once, when the parameter definition is encountered, an indirection
+    that cannot be resolved will cause template parsing to fail.
+
+    When a '[]' annotated type is indirected:
+        List parameters will be flattened, so as to be equivalent to a series of Indirections
+        each including an "item" specifier.
+        Any duplicate values will be silently dropped, leaving only the first instance.
+
+    Specifiers:
+        "item(<n>)" - selects the <n>th item from a list parameter, the list is 1-indexed
+        "range(<s>..<e>)" - selects items in the inclusive range <s> to <e> from a list parameter
+
+Implicit Definitions:
+    These definitions are implied at the start of all {=defs} sections.
+
+    define const :TRUE
+     value true
+    define const :FALSE
+     value false
+
+Conditional Parameters:
+    Conditional parameters allow for parts of a template to be included only if
+    a specified condition is true.
+
+    A conditional parameter must occupy its own line.
+
+    Syntax:
+        The start of a conditional block is marked by:
+        "{?[<parameter>(<value>)]}"
+        <parameter> is the name of the parameter this condition will depend on
+        <value> is the name of a parameter
+
+        When the value of <parameter> is the same as the value of <value>, the
+        condition is true.
+
+        The end of the conditional block is marked by:
+        "{?!}"
 
