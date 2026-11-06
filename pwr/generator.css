@@ -166,6 +166,9 @@ div#request-table.fixed-table {
 div#properties {
     overflow-y: scroll;
 }
+span#prop-sitename, span#prop-domain {
+    overflow-wrap: anywhere;
+}
 pre#prop-body {
     text-wrap: wrap;
     word-wrap: break-word;

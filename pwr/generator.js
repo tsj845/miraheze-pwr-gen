@@ -9,6 +9,7 @@
      * @typedef {import("./stubs.cjs").ReqData} ReqData
      * @typedef {import("./stubs.cjs").TemplateData} TemplateData
      * @typedef {import("./stubs.cjs").RListData} RListData
+     * @typedef {import("./stubs.cjs").ReviewStatus} ReviewStatus
      */
 	const main_content = document.getElementById("person-pwr-gen-content");
     main_content.setAttribute("data-pwr-state", "select");
@@ -144,6 +145,7 @@
     };
     function saveDraft() {
         const key = `${csource}#${RWQ_ID.value}`;
+        // const akey = {source:csource,id:RWQ_ID.value};
         let pos;
         if (key in review_data) {
             pos = review_data[key].pos;
@@ -151,6 +153,12 @@
             pos = review_count ++;
         }
         const render = template_instance.render();
+        // PWR.Artifacts.IN_PROGRESS.set(akey, {
+        //     date: Date.now(),
+        //     template: templsel.value,
+        //     artifact: template_instance.artifact()
+        // });
+        // PWR.Artifacts.REVIEW_STATUS.set(akey, {status:"inprogress"});
         review_data[key] = {
             id: RWQ_ID.value,
             artifact: template_instance.artifact(),
