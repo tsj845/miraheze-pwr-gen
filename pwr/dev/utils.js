@@ -850,6 +850,10 @@ const PWR = (() => {
                         if (pb.type === "bool") {
                             def[prop] = def[prop] === "true";
                         }
+                        // same for list deduping
+                        if (pb.type === "list") {
+                            def[prop] = [...new Set(def[prop]).keys()];
+                        }
                     }
                     if (failed) {
                         throw new Error("property indirection failure");

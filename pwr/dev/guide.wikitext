@@ -47,8 +47,31 @@ When writing templates you'll need to keep the following in mind:
 The template consists of two parts. The first is the template content, which is just wikitext with parameter invocations.
 The second is the parameter definitions. These parts are separated by a line containing only <code>{=defs}</code>.
 
+==== Conditional Content ====
+Conditional blocks allow parts of a template to render only if a condition is met.
+
+A block is opened with <code>{?[param(value)]}</code> where <code>param</code> and <code>value</code> are parameter names, the block is closed with <code>{?!}</code>. Blocks may be nested. The condition is true when both parameters have the same value.
+
+Example:
+<pre>
+{?[check(:TRUE)]}
+the box is checked
+{?!}
+{?[check(:FALSE)]}
+the box is unchecked
+{?!}
+
+{=defs}
+define checkbox check
+ [checked] :TRUE
+ [unchecked] :FALSE
+</pre>
+While render as <code>the box is checked</code> if the checkbox is checked, and will render as <code>the box is unchecked</code> if it is unchecked.
+
 ==== Parameters ====
 There are two types of parameters, canonical and template-defined. Canonical parameters are always available and always have consistent meanings.
+
+Most parameters can be surrounded by square brackets (<code>[]</code>) to mark them as indirected. See the spec for which properties support indirection.
 
 The following is a list of all cononical parameters:
 {| class="wikitable"
@@ -99,6 +122,8 @@ Each parameter type has different allowed properties.
 | Choice || <code>choice</code>
 |-
 | Checkbox || <code>checkbox</code>
+|-
+| List || <code>list</code>
 |}
 
 ==== Constant Parameters ====
@@ -162,6 +187,15 @@ Checkbox parameters display as a checkbox, and have two possible values.
 | <code>checked</code> || the value when the checkbox is checked || Yes
 |-
 | <code>unchecked</code> || the value when the checkbox is unchecked || Yes
+|}
+
+==== List Parameters ====
+List parameters do not display, and are only used with indirection.
+{| class="wikitable"
+|-
+! Property !! Description !! Required
+|-
+| <code>item</code> || may appear multiple times, each instance is an item in the list || Yes
 |}
 
 ==== Standard Meanings ====
