@@ -21,9 +21,9 @@
     main_content.replaceChildren(
         make("div", {id:"request-list",children:[
             make("div", {id:"reqlist-controls",children:[
-                make("label", {for:"rlcontrol-show-old",textContent:"Show Reviewed: "}),
-                make("input", {type:"checkbox",id:"rlcontrol-show-old"}),
-                make("input", {type:"button",value:"Import Practice Requests",id:"rlcontrol-import"})
+                make("label", {for:"rlcontrol-show-old",textContent:"Show Reviewed: ",hidden:true}),
+                make("input", {type:"checkbox",id:"rlcontrol-show-old",hidden:true}),
+                make("input", {type:"button",value:"Import Practice Requests",id:"rlcontrol-import",hidden:true})
             ]}),
             make("div", {id:"request-table",classList:["fixed-table"],children:[
                 make("div", {classList:["fixed-table-head"],children:[
